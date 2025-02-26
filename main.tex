@@ -1,0 +1,51 @@
+\documentclass[10pt]{elegantbook}
+
+% \title{Home}
+% \subtitle{}
+
+% \author{DarkSharpness}
+% \institute{}
+% \date{2024-2025 Spring}
+% \version{1.1.1}
+% \bioinfo{}{}
+
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+\extrainfo{}
+
+\setcounter{tocdepth}{3}
+
+% \logo{logo-blue.png}
+\cover{cover.jpg}
+
+% 本文档命令
+\usepackage{array}
+\newcommand{\ccr}[1]{\makecell{{\color{#1}\rule{1cm}{1cm}}}}
+
+
+
+% 修改标题页的橙色带
+% \definecolor{customcolor}{RGB}{32,178,170}
+% \colorlet{coverlinecolor}{customcolor}
+
+\begin{document}
+
+\maketitle
+\frontmatter
+
+% \tableofcontents
+
+\mainmatter
+
+\input{src/hw1}
+
+\printbibliography[heading=bibintoc, title=\ebibname]
+\appendix
+
+\end{document}
