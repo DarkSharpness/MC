@@ -1,0 +1,186 @@
+\chapter{Homework 1}
+
+\section{Problem 1}
+
+There are 2 kinds of traces:
+
+\begin{itemize}
+    \item \textbf{Trace 1:} $\{a\}, \{a\}, \{a, b\}, \{a\}, \{a, b\}, \{a\}, \cdots$
+    \item \textbf{Trace 2:} $\{a\}, \emptyset, \{a, b\}, \{a\}, \{a, b\}, \{a\}, \cdots$
+\end{itemize}
+
+Type 1 starts with 2 $a$, and then alternates between $a, b$ and $a$.
+Type 2 starts with $a$ and $\emptyset$, and then alternates between $a, b$ and $a$.
+
+\section{Problem 2}
+
+To show that a property is a safety property, we need to show each trace that violates the property has a bad prefix.
+
+Otherwise, the property is not a safety property.
+
+Specially, we may use the fact that an invariant is a safety property.
+
+\subsection{a}
+
+\newcommand{\A}{\{A\}}
+\newcommand{\B}{\{B\}}
+
+$$
+P = \{A_0 A_1 A_2 \cdots A_n \cdots | \forall i \ge 0,  A \notin A_n \}
+$$
+
+It's trivial that $P$ is a safety property (it is even an invariant, where $\Phi = \{\B, \emptyset \}$).
+
+\subsection{b}
+
+Consider the following trace:
+
+$$
+T = \{\B \B \B \cdots \}
+$$
+
+It is composed of infinitely many $\B$. Obviously, it is not satisfied by the given property.
+Moreover, for every finite prefix $T_n = \{\B \B \B \cdots \B\}$ with $n$ $\B$,
+there exists a trace $\{\B \B \B \cdots \B \A \B \B \cdots\}$
+that starts with $T_n$ and satisfies the property $P$.
+
+As a result, the property is not a safety property, as $T$ does not have a bad prefix.
+
+\subsection{c}
+
+$$
+P = \{ (\A \B)^\omega, (\B \A)^\omega \}
+$$
+
+Trivially, for any trace that violates the property, there exists a bad prefix $T$
+which ends with $\A \A$ or $\B \B$ or $\{A, B\}$ or $\emptyset$.
+(Otherwise, in this trace each $\A$ must be followed by $\B$, and vice versa, which must be in $P$.)
+
+In short, the property is a safety property.
+
+\subsection{d}
+
+Similar to (b), consider the following trace:
+
+$$
+T = \{\A \A \A \cdots \}
+$$
+
+Similar to (b), we can prove that it has no bad prefix.
+
+As a result, the property is not a safety property.
+
+(In fact, it is a liveness property, though I don't want to prove it here.
+Since the only property which is both a safety property and a liveness property is $(2^{AP})^\omega$,
+and this property is of course not $(2^{AP})^\omega$, so we may conclude that it is not a safety property
+in an alternative way.)
+
+\section{Problem 3}
+
+\newcommand{\pref}{\textit{prefix}}
+
+Review the definition of liveness property:
+An LT property $P \subseteq (2^{AP})^\omega$ is a liveness property if we have that
+$\pref(P) = (2^{AP})^*$, where $\pref(-)$ is the set of finite prefixes in $P$.
+
+\subsection{a}
+
+If $P, P'$ are both liveness property, then $P \cup P'$ is also a liveness property.
+This is because:
+
+$$
+\begin{aligned}
+    \pref(P \cup P')
+    &= \{ A_0 A_1 \cdots A_n | A_0 A_1 \cdots A_n \cdots \in P \cup P' \} \\
+    &\supseteq \{ A_0 A_1 \cdots A_n | A_0 A_1 \cdots A_n \cdots \in P \} \\
+    &= \pref(P) \\
+    &= (2^{AP})^* \\
+\end{aligned}
+$$
+
+In addition, we have $\pref(P \cup P') \subseteq (2^{AP})^*$, so $\pref(P \cup P') = (2^{AP})^*$,
+which indicates that $P \cup P'$ is a liveness property.
+
+\subsection{b}
+
+If $P, P'$ are both liveness property, then $P \cap P'$ may not be a liveness property.
+Consider the following counterexample:
+
+$AP = \A$. For simplicity, we denote $\A$ as $1$ and $\emptyset$ as $0$. We construct $P, P'$ as follows:
+
+$$
+P  = \{ (0 | 1)^n 1 1 1 \cdots \}
+P' = \{ (0 | 1)^n 0 0 0 \cdots \}
+$$
+
+Intuitively, $P$ requires that each trace ends with infinitely many $1$,
+while $P'$ requires that each trace ends with infinitely many $0$.
+
+It's easy to see that $P \cap P' = \emptyset$, which is not a liveness property
+(since its prefix set is $\emptyset$).
+
+\section{Problem 4}
+
+\subsection{a}
+
+\newcommand{\aaa}{\{\alpha\}}
+\newcommand{\bb}{\{\beta\}}
+\newcommand{\ee}{\{\eta\}}
+\newcommand{\Act}{\textit{Act}}
+
+First of all, since it is unconditionally $\aaa$-fair, we must visit $\aaa$ infinitely many times.
+As a result, we cannot reach $s_4$, as it will result in an infinite loop which only takes action
+$\bb$, which violates the fairness condition.
+
+Moreover, since it is strongly $\ee$-fair, we can only visit $s_3$ finitely many times.
+If we visit $s_3$ infinitely many times, then according to the fairness condition,
+since $\ee \subseteq \Act(s_3)$, there must be infinitely many $\ee$ actions taken.
+However, once $\ee$ is taken, we will reach $s_4$, which is against the previous conclusion.
+
+Therefore, for each fair path $T=\{s_0 s_1 s_2 \cdots\}$, there exists some $m$, such that 
+$\forall n \ge m, s_n \ne s_3$.
+
+Next, we claim that a fair path must visit $s_0$ infinitely many times.
+If not, then there exists some $q$ such that $\forall n \ge q, s_n \ne s_0$.
+Consider the states after $\max(m, q)$, it is clear that we can only end up
+visiting $s_1$ continuously. This violates the strongly $\{delta, \gamma\}$-fair condition,
+since $\{delta, \gamma\} \cup \Act(s_1) = \{\gamma\} \ne \emptyset$, which means
+that we must take infinitely many $\delta$ or $\gamma$, which is contradictory to the fact
+that we end up visiting $s_1$ continuously.
+
+As a result, a fair path must visit $s_0$ infinitely many times. We may apply the strongly $\bb$-fair condition,
+which shows that we must take action $\bb$ infinitely many times, equivalently visiting $s_2$ infinitely many times.
+
+Then, we claim that:
+
+$$
+\textit{TS} \models_{\mathcal{F}_1} P_2
+$$
+
+This is because for each fair path, it will visit $s_2$ infinitely many times,
+which means $\{a, b\}$ will appear infinitely many times in a fair trace.
+
+In addition, after $m$ steps, we can only reach $s_0, s_1, s_2$.
+Then if $a \in {A_k}, k \ge m$, then we must be in $s_0$ or $s_2$.
+Whichever state we are in, we will take action and transfer to $s_1$ or $s_2$,
+where $\{b\}$ will be in $A_{k+1}$.
+
+As a result, we have shown that each fair trace is in $P_2$, which means
+$\textit{TS} \models_{\mathcal{F}_1} P_2$
+
+\subsection{b}
+
+Consider the following counterexample:
+
+\newcommand{\xa}{\xrightarrow{\alpha}}
+\newcommand{\xb}{\xrightarrow{\beta}}
+\newcommand{\xg}{\xrightarrow{\gamma}}
+\newcommand{\xd}{\xrightarrow{\delta}}
+
+$$
+T = \{s_0 \xb s_2 \xd s_3 \xa s_1 \xg s_0 \xb s_2 \xd s_3 \xa s_1 \xg \cdots\}
+$$
+
+It's easy to verify that the trace of $T$ is $\mathcal{F}_2$ fair, and it is not in $P_2$.
+
+Therefore, $\textit{TS} \not\models_{\mathcal{F}_2} P_2$
