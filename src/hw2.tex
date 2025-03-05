@@ -75,7 +75,7 @@ Since the only property which is both a safety property and a liveness property 
 and this property is of course not $(2^{AP})^\omega$, so we may conclude that it is not a safety property
 in an alternative way.)
 
-\section{Problem 3}
+\section{Problem 3 (wrong version)}
 
 \newcommand{\pref}{\textit{prefix}}
 
@@ -118,6 +118,49 @@ while $P'$ requires that each trace ends with infinitely many $0$.
 
 It's easy to see that $P \cap P' = \emptyset$, which is not a liveness property
 (since its prefix set is $\emptyset$).
+
+\section{Problem 3}
+
+Sorry, I was wrong. I need to prove about safety properties, not liveness properties.
+
+\subsection{a}
+
+If $P, P'$ are both safety property, then $P \cup P'$ is also a safety property.
+This is because:
+
+\newcommand{\bad}[1]{\textit{BadPrefix}(#1)}
+\newcommand{\whole}{(2^{AP})^\omega}
+
+For every word $\sigma \in \whole \setminus (P \cup P')$,
+since $\whole \setminus (P \cup P') \subseteq \whole \setminus P$
+and $\whole \setminus (P \cup P') \subseteq \whole \setminus P'$,
+we have prefixes $\hat{\sigma_1}$ and $\hat{\sigma_2}$ such that
+$\hat{\sigma_1} \in \bad{P}$ and $\hat{\sigma_2} \in \bad{P'}$.
+
+Now, it is easy to see that the longer one in $\hat{\sigma_1}$ and
+$\hat{\sigma_2}$ is also a bad prefix of $P \cup P'$.
+
+This proves that $P \cup P'$ is a safety property,
+since every trace outside $P \cup P'$ has a bad prefix.
+
+\subsection{b}
+
+If $P, P'$ are both safety property, then $P \cap P'$ is also a safety property.
+This is because:
+
+$$
+\sigma \in \whole \setminus (P \cap P')
+= (\whole \setminus P) \cup (\whole \setminus P')
+$$
+
+As a result, for each $\sigma \in \whole \setminus (P \cap P')$,
+without loss of generality, we have $\sigma \in \whole \setminus P$,
+which indicates that there exists a bad prefix $\hat{\sigma} \in \bad{P}$.
+
+Now it is easy to see that $\hat{\sigma}$ is also a bad prefix of $P \cap P'$.
+
+This proves that $P \cap P'$ is a safety property,
+since every trace outside $P \cap P'$ has a bad prefix.
 
 \section{Problem 4}
 
