@@ -16,6 +16,12 @@ jobs:
       - name: Set up Git repository
         uses: actions/checkout@v3
 
+      - name: Run some custom shell scripts
+        run: |
+          pip install graphviz
+          sudo apt install graphviz
+          ./python/run.sh
+
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v2
         with:
