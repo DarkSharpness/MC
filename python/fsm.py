@@ -103,7 +103,7 @@ class Worker:
         double_edges = self._merge_edges() if do_merge_double else {}
 
         dir = dir.split("/")[-1].split(".")[0]
-        fsm = graphviz.Digraph(format='svg')
+        fsm = graphviz.Digraph(format='pdf')
 
         def _comb(*maps: Dict[str, Any]) -> Dict[str, Any]:
             result = {}
