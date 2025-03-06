@@ -6,7 +6,7 @@ from collections import defaultdict
 EdgeMap = Dict[Tuple[int, int], Set[str]]
 
 @dataclass
-class Worker:
+class FSM:
     label: List[str]
     type_: Literal["DFA"] | Literal["NFA"] = "DFA"
 
@@ -154,15 +154,15 @@ class Worker:
         fsm.attr(**fsm_map)
         fsm.render(name, directory=f"generated/{dir}", cleanup=True)
 
-    def complement(self) -> "Worker":
-        w = Worker(label=self.label)
+    def complement(self) -> "FSM":
+        w = FSM(label=self.label)
         w.nodes = self.nodes
         w.edges = self.edges
         w.start = self.start
         w.final = w.nodes - self.final
         return w
 
-    def to_dfa(self) -> "Worker":
+    def to_dfa(self) -> "FSM":
         assert self.type_ == "NFA", "Only NFA can be converted to DFA"
         assert sorted(list(self.nodes)) == list(range(len(self.nodes))), \
             "Currently, we only support node index from 0 to n-1"
@@ -188,7 +188,7 @@ class Worker:
         def _convert2list(node: int) -> List[int]:
             return [i for i in range(len(self.nodes)) if node & (1 << i)]
 
-        new_worker = Worker(label=self.label)
+        new_worker = FSM(label=self.label)
         new_worker.type_ = "DFA"
         new_worker._name_map = _make_powerset_name_map()
         new_worker.start = {1 << self._check_start()}

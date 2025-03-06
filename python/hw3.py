@@ -1,7 +1,7 @@
-from fsm import Worker
+from fsm import FSM
 
 def p1_a():
-    w = Worker(label=["a", "b"])
+    w = FSM(label=["a", "b"])
 
     w.add_edges(0, (0, "a"), (1, "b"), start=True) # <>
     w.add_edges(1, (2, "a"), (1, "b")) # <b>
@@ -13,7 +13,7 @@ def p1_a():
     w.complement().dump_to(name="p1_a_1", dir=__file__)
 
 def p1_b():
-    w = Worker(label=["a", "b"])
+    w = FSM(label=["a", "b"])
 
     w.add_edges(0, 1, 2, start=True, final=True) # <>
     w.add_edges(1, 1, 2, final=True) # <a*>
@@ -24,7 +24,7 @@ def p1_b():
     w.complement().dump_to(name="p1_b_1", dir=__file__)
 
 def p2_c():
-    w = Worker(label=["0", "1"])
+    w = FSM(label=["0", "1"])
     # same as p1_a, b -> 0 and a -> 1
 
     w.add_edges(0, 1, 0, start=True) # <>
@@ -36,7 +36,7 @@ def p2_c():
     w.dump_to(name="p2_c", dir=__file__)
 
 def p2_l():
-    w = Worker(label=["0", "1"])
+    w = FSM(label=["0", "1"])
 
     w.add_edges(0, 1, 2, final=True) # <even 0, zero 1>
     w.add_edges(1, 0, 3)             # <odd 0, zero 1>
@@ -61,7 +61,7 @@ def p2_l():
     )
 
 def p3():
-    w = Worker(label=["0", "1"], type_="NFA")
+    w = FSM(label=["0", "1"], type_="NFA")
 
     w.add_edges(0, (0, "0"), (0, "1"), (1, "0"))
     w.add_edges(1, (2, "0"))
@@ -70,7 +70,7 @@ def p3():
     w.dump_to(name="p3", dir=__file__)
 
 def p4():
-    w = Worker(label=["0", "1"], type_="NFA")
+    w = FSM(label=["0", "1"], type_="NFA")
 
     w.add_edges(0, (1, "0"), final=True)
     w.add_edges(1, (0, "1"), (2, "0"), (3, "1"))
