@@ -6,6 +6,256 @@ from collections import defaultdict
 EdgeMap = Dict[Tuple[int, int], Set[str]]
 
 @dataclass
+class ASTOp():
+    pass
+
+@dataclass
+class LitOp(ASTOp):
+    val: str
+
+@dataclass
+class CatOp(ASTOp):
+    lst: List[ASTOp]
+
+@dataclass
+class AddOp(ASTOp):
+    pass
+
+@dataclass
+class MulOp(ASTOp):
+    pass
+
+@dataclass
+class InfOp(ASTOp):
+    pass
+
+class BaseNode():
+    pass
+
+@dataclass
+class LitNode(BaseNode):
+    val: str
+    def __repr__(self) -> str:
+        return self.val
+
+@dataclass
+class CatNode(BaseNode):
+    "e.g. ABCDEF"
+    lst: List[BaseNode]
+    def __repr__(self) -> str:
+        return "(" + "".join(str(x) for x in self.lst) + ")"
+
+@dataclass
+class AddNode(BaseNode):
+    "e.g. A | B | C"
+    lst: List[BaseNode]
+    def __repr__(self) -> str:
+        return "(" + " | ".join(str(x) for x in self.lst) + ")"
+
+@dataclass
+class MulNode(BaseNode):
+    "e.g.: A*"
+    sub: BaseNode
+    def __repr__(self) -> str:
+        return f"{self.sub}*"
+
+@dataclass
+class InfNode(BaseNode):
+    "e.g.: A^ (same as A^w)"
+    sub: BaseNode
+    def __repr__(self) -> str:
+        return f"{self.sub}^"
+
+def _parase_nba_grammar(rule: str) -> Tuple[BaseNode, bool]:
+    # contains: <alnum>, (, ), <space>, *, +, |, ^
+    # <alnum> ::= [a-zA-Z0-9]
+    # <space> ::= " "
+    # <binary op> ::= +
+    # <unary op> ::= *, ^
+
+    def _lexing(rule: str) -> CatOp:
+        _op_map: Dict[str, type[ASTOp]] = {
+            "*": MulOp,
+            "^": InfOp,
+            "+": AddOp,
+            "|": AddOp, # alias
+        }
+        stack: List[List[ASTOp]] = []
+        top: List[ASTOp] = []
+        for c in rule:
+            if c.isalnum():
+                top.append(LitOp(c))
+            elif c in "*+|^":
+                top.append(_op_map[c]())
+            elif c == "(":
+                stack.append(top)
+                top = []
+            elif c == ")":
+                sub = CatOp(top)
+                top = stack.pop()
+                top.append(sub)
+            elif c.isspace():
+                pass
+            else:
+                raise ValueError(f"Invalid character {c} (ASCII: {ord(c)})")
+        assert len(stack) == 0, "Unmatched parenthesis"
+        return CatOp(top)
+
+    def _semantic_check(lst: List[ASTOp]):
+        # all Inf | Mul must have lhs node.
+        last: ASTOp = ASTOp()
+        for op in lst:
+            if isinstance(op, InfOp | MulOp):
+                assert isinstance(last, LitOp | CatOp), "Invalid node"
+            elif isinstance(op, AddOp):
+                assert not isinstance(last, AddOp), "Invalid node"
+            last = op
+        # all Add must have rhs node
+        last = ASTOp()
+        for op in reversed(lst):
+            if isinstance(op, AddOp):
+                assert isinstance(last, LitOp | CatOp), "Invalid node"
+            last = op
+
+    def _parse_node(node: CatOp) -> BaseNode:
+        _semantic_check(node.lst)
+        # 1. apply all the * and ^ operator to its left node
+        new_op_lst: List[BaseNode | None] = []
+        for op in node.lst:
+            if isinstance(op, MulOp):
+                assert len(new_op_lst) > 0 and new_op_lst[-1] is not None, \
+                    "This should not happen, as should fail in semantic check"
+                new_op_lst[-1] = MulNode(new_op_lst[-1])
+            elif isinstance(op, InfOp):
+                assert len(new_op_lst) > 0 and new_op_lst[-1] is not None, \
+                    "This should not happen, as should fail in semantic check"
+                new_op_lst[-1] = InfNode(new_op_lst[-1])
+            elif isinstance(op, CatOp):
+                new_op_lst.append(_parse_node(op))
+            elif isinstance(op, LitOp):
+                new_op_lst.append(LitNode(op.val))
+            elif isinstance(op, AddOp):
+                new_op_lst.append(None)
+            else:
+                assert False, "This should not happen"
+
+        # 2. apply all the + operator (which is None) in the list
+        add_list: List[BaseNode] = []
+        cur_list: List[BaseNode] = []
+        for op in new_op_lst:
+            if op is not None:
+                cur_list.append(op)
+            else:
+                add_list.append(CatNode(cur_list))
+                cur_list = []
+        assert len(cur_list) > 0, "Invalid node"
+        add_list.append(CatNode(cur_list))
+        if len(add_list) == 1:
+            return add_list[0]
+        return AddNode(add_list)
+
+    def _post_check(node: BaseNode) -> bool:
+        "check whether there is infinity node in the tree"
+        if isinstance(node, InfNode):
+            return True
+        elif isinstance(node, MulNode):
+            assert not _post_check(node.sub), \
+                "Sub node of MulNode should not be infinite" \
+                f"\n {node = }"
+        elif isinstance(node, CatNode):
+            assert len(node.lst) > 0, "Invalid node"
+            result = [_post_check(x) for x in node.lst]
+            assert not any(result[:-1]), \
+                "Only the last node in CatNode can be infinite" \
+                f"\n {node = }, {result = }"
+            return result[-1]
+        elif isinstance(node, AddNode):
+            assert len(node.lst) > 0, "Invalid node"
+            cnt = sum([_post_check(x) for x in node.lst]) 
+            assert cnt in [0, len(node.lst)], \
+                "Either all or none of the sub node should be infinite:" \
+                f"\n {node = }, {cnt = }"
+            return cnt > 0
+        elif isinstance(node, LitNode):
+            pass
+        else:
+            assert False, "This should not happen"
+        return False
+
+    result = _parse_node(_lexing(rule))
+    return result, _post_check(result)
+
+def _collect_symbol(tree: BaseNode) -> Set[str]:
+    if isinstance(tree, LitNode):
+        return {tree.val}
+    elif isinstance(tree, CatNode):
+        return set().union(*[_collect_symbol(x) for x in tree.lst])
+    elif isinstance(tree, AddNode):
+        return set().union(*[_collect_symbol(x) for x in tree.lst])
+    elif isinstance(tree, MulNode):
+        return _collect_symbol(tree.sub)
+    elif isinstance(tree, InfNode):
+        return _collect_symbol(tree.sub)
+    else:
+        assert False, "This should not happen"
+
+
+
+@dataclass
+class _PartialNode:
+    @staticmethod
+    def _init_dict():
+        return defaultdict(set)
+    iedge: Dict[str, Set["_PartialNode"]] = field(default_factory=_init_dict)
+    oedge: Dict[str, Set["_PartialNode"]] = field(default_factory=_init_dict)
+    sedge: Set[str] = field(default_factory=set)
+
+def _partial_connect(a: _PartialNode, b: _PartialNode, label: str):
+    assert label != "", "Empty label is not allowed"
+    if a is b:
+        a.sedge.add(label)
+    else:
+        a.oedge[label].add(b)
+        b.iedge[label].add(a)
+
+def _partial_replace(a: _PartialNode, b: _PartialNode):
+    "Replace all the edges that points to b to a"
+    "Note that a and b must be disjoint before calling this function"
+    assert a is not b, "Cannot merge self node"
+
+    a.sedge.update(b.sedge)
+    for label, nodes in b.iedge.items():
+        for node in nodes:
+            node.oedge[label].remove(b)
+            node.oedge[label].add(a)
+        a.iedge[label].update(nodes)
+
+    for label, nodes in b.oedge.items():
+        for node in nodes:
+            node.iedge[label].remove(b)
+            node.iedge[label].add(a)
+        a.oedge[label].update(nodes)
+
+    b.sedge = set()
+    b.iedge = defaultdict(set)
+
+@dataclass
+class _PartialFSM:
+    start: _PartialNode = field(default_factory=_PartialNode)
+    final: _PartialNode = field(default_factory=_PartialNode)
+
+    @staticmethod
+    def _cat(lhs: "_PartialFSM", rhs: "_PartialFSM") -> "_PartialFSM":
+        _partial_replace(lhs.final, rhs.start)
+        if rhs.final == rhs.start:
+            rhs.final = lhs.final
+        return _PartialFSM(start=lhs.start, final=rhs.final)
+
+    @staticmethod
+    def from_tree(node: BaseNode) -> "_PartialFSM":
+        raise NotImplementedError
+
+@dataclass
 class FSM:
     label: List[str]
     type_: Literal["DFA"] | Literal["NFA"] = "DFA"
@@ -220,3 +470,50 @@ class FSM:
                     queue.append(end)
 
         return new_worker
+
+    @staticmethod
+    def _compile_infinite(tree: BaseNode) -> "FSM":
+        fsm = FSM(label=sorted(list(_collect_symbol(tree))), type_="NFA")
+        print(fsm.label)
+
+        def visit(node: BaseNode):
+            if isinstance(node, LitNode):
+                return node.val
+            elif isinstance(node, CatNode):
+                for i in range(len(node.lst) - 1):
+                    visit(node.lst[i])
+                    visit(node.lst[i+1])
+                return ""
+            elif isinstance(node, AddNode):
+                for sub in node.lst:
+                    visit(sub)
+                return ""
+            elif isinstance(node, MulNode):
+                visit(node.sub)
+                return ""
+            elif isinstance(node, InfNode):
+                visit(node.sub)
+                return ""
+            else:
+                assert False, "This should not happen"
+
+        raise NotImplementedError
+
+    @staticmethod
+    def _compile_finite(tree: BaseNode) -> "FSM":
+        raise NotImplementedError
+
+    @staticmethod
+    def compile(rule: str) -> "FSM":
+        tree, is_inf = _parase_nba_grammar(rule)
+        print(tree, is_inf)
+        if is_inf:
+            return FSM._compile_infinite(tree)
+        else:
+            return FSM._compile_finite(tree)
+
+if __name__ == "__main__":
+    try:
+        fsm = FSM.compile("(AB + C)*((AA + B)C)^ + (A*C)^")
+    except NotImplementedError:
+        pass
