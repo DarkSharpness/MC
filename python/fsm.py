@@ -257,7 +257,7 @@ class _PartialFSM:
 
 @dataclass
 class FSM:
-    label: List[str]
+    label: List[str] | str
     type_: Literal["DFA"] | Literal["NFA"] = "DFA"
 
     def __post_init__(self):
@@ -267,6 +267,8 @@ class FSM:
         self.start: Set[int] = set()
         self._visited: Set[int] = set()
         self._name_map: None | Dict[int, str] = None
+        if isinstance(self.label, str):
+            self.label = [c for c in self.label]
 
     def _add_edge(self, start: int, end: int, label: str):
         self.nodes.add(start)
@@ -329,12 +331,12 @@ class FSM:
                 new_edges[(start, end)] = label
         return new_edges
 
-    def _check_start(self) -> int:
-        assert len(self.start) <= 1, "Multiple start states not supported"
+    def _check_start(self) -> List[int]:
+        # assert len(self.start) <= 1, "Multiple start states not supported"
         if len(self.start) == 0:
             assert 0 in self.nodes, "Start state not defined"
-            return 0
-        return list(self.start)[0]
+            return [0]
+        return list(self.start)
 
     def dump_to(
         self, name: str, dir: str, *_unused,
@@ -363,8 +365,9 @@ class FSM:
 
         def _insert_start(s: graphviz.Digraph):
             start = self._check_start()
-            s.node("", ordering="out", shape="point", style="invis")
-            s.edge("", str(start), ordering="out")
+            for i in start:
+                s.node(f"_start_{i}", ordering="out", shape="point", style="invis")
+                s.edge(f"_start_{i}", str(i), ordering="out")
 
         def _insert_node(s: graphviz.Digraph, id_list: List[int]):
             for id in id_list:
@@ -441,7 +444,9 @@ class FSM:
         new_worker = FSM(label=self.label)
         new_worker.type_ = "DFA"
         new_worker._name_map = _make_powerset_name_map()
-        new_worker.start = {1 << self._check_start()}
+        start_pos = self._check_start()
+        assert len(start_pos) == 1, "Multiple start states not supported"
+        new_worker.start = {1 << start_pos[0]}
 
         queue: List[int] = [list(new_worker.start)[0]]
         visit: Set[int] = set()
