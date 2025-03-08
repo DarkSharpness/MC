@@ -67,47 +67,93 @@ class State:
         return f'[{self.start}] {self.name} -> ' + \
             f'{self.expr[:self.pos]}•{self.expr[self.pos:]}'
 
-def parse(grammar: Grammar, text: str):
-    state_set: List[Set[State]] = [set() for _ in range(len(text) + 1)]
-    state_set[0].add(State(*grammar[ROOT_RULE][0]))
+END_SYMBOL = "."
 
-    def _complete(state: State) -> List[State]:
+@dataclass
+class Parser:
+    grammar: Grammar
+
+    def __post_init__(self):
+        self.state_set: List[Set[State]] = [set()]
+        self.inputs: str = ""
+        self.state_set[0].add(State(*self.grammar[ROOT_RULE][0]))
+
+    def _complete(self, state: State) -> List[State]:
         results: List[State] = []
-        for r in state_set[state.start]:
+        for r in self.state_set[state.start]:
             if state.name == r.symbol():
                 results.append(next(r))
         return results
 
-    def _predict(start: int, symbol: str) -> List[State]:
+    def _predict(self, start: int, symbol: str) -> List[State]:
         return [
             State(*r, start=start)
-            for r in grammar[symbol]
+            for r in self.grammar[symbol]
         ]
 
-    def _scan(state: State, start: int, token: str):
+    def _scan(self, state: State, start: int, token: Terminal):
         if state.symbol() == token:
-            state_set[start + 1].add(next(state))
+            self.state_set[start + 1].add(next(state))
 
-    END_SYMBOL = "."
-    for i, input_symbol in enumerate(text + END_SYMBOL):
-        queue = list(state_set[i])
-        state_set[i] = set()
+    def _consume(self, text: str):
+        terminal = is_terminal(text)
+        assert terminal is not None and len(terminal) == 1
+        self.inputs += terminal
+
+        queue = list(self.state_set.pop())
+        new_set = set()
+        cur_pos = len(self.state_set)
+        self.state_set.append(new_set)
+        self.state_set.append(set())
+
         while queue:
             state = queue.pop(0)
-            if state in state_set[i]:
+            if state in new_set:
                 continue
-            state_set[i].add(state)
+            new_set.add(state)
             if state.terminated():
-                queue += _complete(state)
+                queue += self._complete(state)
             elif nt := state.nonterminal_symbol():
-                queue += _predict(i, nt)
+                queue += self._predict(cur_pos, nt)
             else:
-                _scan(state, i, input_symbol)
+                self._scan(state, cur_pos, terminal)
 
-    for i, state in enumerate(state_set):
-        accept = any(s.name == ROOT_RULE and s.terminated() for s in state)
-        print(f"State {i}: {text[:i]}•{text[i:]} {accept=}")
-        print("\n".join(f"  {s}" for s in state))
+    def _finalize(self, pos: int):
+        queue = list(self.state_set.pop())
+        new_set = set()
+        cur_pos = len(self.state_set)
+        self.state_set.append(new_set)
+        while queue:
+            state = queue.pop(0)
+            if state in new_set:
+                continue
+            new_set.add(state)
+            if state.terminated():
+                queue += self._complete(state)
+            elif nt := state.nonterminal_symbol():
+                queue += self._predict(cur_pos, nt)
+        text = self.inputs
+        if pos == 1:
+            pos = 0
+        for i, state in enumerate(self.state_set):
+            if i < pos:
+                continue
+            accept = any(s.name == ROOT_RULE and s.terminated() for s in state)
+            print(f"State {i}: {text[:i]}•{text[i:]} {accept=}")
+            print("\n".join(f"  {s}" for s in state))
+
+    def _print(self, pos: int) -> None:
+        copy = Parser(self.grammar)
+        copy.state_set = self.state_set + []
+        copy.inputs = self.inputs + ""
+        return copy._finalize(pos)
+
+    def read(self, text: str):
+        length = len(self.state_set)
+        for token in text:
+            self._consume(token)
+        self._print(length)
+        return self
 
 grammar = Grammar.parse(
     """
@@ -116,6 +162,5 @@ grammar = Grammar.parse(
     B ::= A | a |
     """
 )
-print(grammar)
-parse(grammar, "ab")
-parse(grammar, "aac")
+
+Parser(grammar).read("ab").read("c").read("c")
