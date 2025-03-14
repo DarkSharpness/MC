@@ -31,3 +31,37 @@ $$
     \centering
     \includegraphics[width=0.8\textwidth]{generated/hw4/p3.pdf}
 \end{figure}
+
+\section{Problem 4}
+
+\subsection{a}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{generated/hw4/p4_a.pdf}
+        \caption{$\mathcal{A}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{generated/hw4/p4_b.pdf}
+        \caption{$\bar{\mathcal{A}}$}
+    \end{subfigure}
+\end{figure}
+
+\subsection{b}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw4/p4_c.pdf}
+\end{figure}
+
+Our algorithm starts at $<q_0 | nn1>$, and suppose the outer dfs travels through:
+$<q_1 | wn1>$, $<q_1 | ww1>$, $<q_1 | wc0>$.
+Since $\text{Post}(<q_1 | wc0>) \setminus \text{R} = \emptyset$, it means that we meet a cycle.
+
+Then we check the against $s'$, and find that it doesn't not satisfy the property $\text{P}_{live}$.
+As a result, we start a inner dfs, and find the cycle (which is the counterexample):
+$<q_1 | wn1>$, $<q_1 | ww1>$, $<q_1 | wc0>$.
