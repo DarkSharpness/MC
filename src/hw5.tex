@@ -1,0 +1,39 @@
+\chapter{Homework 5}
+
+\section{Problem 1}
+
+\begin{enumerate}
+    \item (a) $\bigcirc$ a: $\{s_1, s_2, s_3, s_4\}$
+    \item (b) $\bigcirc \bigcirc \bigcirc$ a: $\{s_1, s_2, s_3, s_4\}$
+    \item (c) $\square$ b: $\emptyset$
+    \item (d) $\square$ $\Diamond$ a: $\{s_1, s_2, s_3, s_4\}$
+    \item (e) $\square$ (b $\cup$  a): $\emptyset$
+    \item (f) $\Diamond$ (a $\cup$ b): $\{s_1, s_2, s_3, s_4\}$
+\end{enumerate}
+
+\section{Problem 2}
+
+\newcommand{\TS}{\text{TS}}
+
+\begin{enumerate}
+    \item $\TS \not \models \varphi_1 = \Diamond$ $\square$ $c$
+    \item $\TS \models \varphi_2 = \square$ $\Diamond$ $c$
+    \item $\TS \models \varphi_3 = \bigcirc$ $\neg c$ $\rightarrow \bigcirc$ $ \bigcirc$ $c$
+    \item $\TS \not \models \varphi_4 = \square$ $a$
+    \item $\TS \models \varphi_5 = a$ $\bigcup$ $\square$ $(b \vee c)$
+    \item $\TS \not \models \varphi_6 = (\bigcirc \bigcirc b)$ $\bigcup$ $(b \vee c)$
+\end{enumerate}
+
+counterexample for $\varphi_1$: $\pi = s_1 s_3 s_4 s_3 s_4 s_3 \cdots$  (infinite $s_4$ and $s_3$ loop)
+
+for $\varphi_2$: all cycles in the graph contains $c$
+
+for $\varphi_3$: if next state does not satisfy $c$, then the next state must be $s4$,
+and we have $\text{Post}(s_4) \models c$
+
+counterexample for $\varphi_4$: $\pi = s_2 \cdots$ (can be any path starting from $s_2$)
+
+for $\varphi_5$: only $s_1$ does not satisfy $(b \vee c)$ and $s_1 \models a$, and we can only reach
+$s_1$ at the beginning.
+
+counterexample for $\varphi_6$: $\pi = s_1 s_4 s_2 \cdots$ (can be any path with such a prefix)
