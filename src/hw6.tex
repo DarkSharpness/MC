@@ -1,0 +1,52 @@
+\chapter{Homework 6}
+
+\section{Problem 1}
+
+\subsection{a}
+
+% $(\square \varphi) \rightarrow (\Diamond \psi) \equiv \varphi \mathsf{U} (\psi \vee \neg \varphi)$ 
+
+$$
+\begin{aligned}
+    (\square \varphi) \rightarrow (\Diamond \psi)
+    & \equiv \neg (\square \varphi) \vee (\Diamond \psi) \\
+    & \equiv \Diamond \neg \varphi \vee \Diamond \psi \\
+    & \equiv \Diamond (\neg \varphi \vee \psi) \\
+    & \equiv \text{true} \mathsf{U} (\neg \varphi \vee \psi) \\
+    & \equiv \varphi \mathsf{U} (\neg \varphi \vee \psi) \\
+\end{aligned}
+$$
+
+\subsection{b}
+
+% $(\Diamond \square \varphi) \rightarrow (\square \Diamond \psi) \equiv \Diamond (\varphi \textsf{U} (\psi \vee \neg \varphi))$
+
+$$
+\begin{aligned}
+    (\Diamond \square \varphi) \rightarrow (\square \Diamond \psi)
+    & \equiv \neg (\Diamond \square \varphi) \vee (\square \Diamond \psi) \\
+    & \equiv (\square \Diamond \neg \varphi) \vee (\square \Diamond \psi) \\
+    & \equiv \square \Diamond (\neg \varphi \vee \psi) \\
+    & \equiv \square (\text{true} \mathsf{U} (\neg \varphi \vee \psi)) \\
+    & \equiv \Diamond (\varphi \mathsf{U} (\psi \vee \neg \varphi)) \\
+\end{aligned}
+$$
+
+\subsection{g}
+
+$(\square \Diamond \varphi) \rightarrow (\square \Diamond \psi) \not \equiv \square (\varphi \rightarrow \Diamond \psi)$
+
+Counterexample: consider a trace $\sigma = \{\{\varphi\} \emptyset \emptyset \cdots \}$.
+
+We can check that $\sigma \models (\square \Diamond \varphi) \rightarrow (\square \Diamond \psi)$, but $\sigma \not \models \square (\varphi \rightarrow \Diamond \psi)$.
+
+\section{Problem 2}
+
+$$
+\begin{aligned}
+    \varphi_1 \mathsf{W} \varphi_2
+    & \equiv \neg ((\varphi_1 \wedge \neg \varphi_2) \mathsf{U} (\neg \varphi_1 \wedge \neg \varphi_2)) \\
+    & \equiv \neg (\varphi_1 \wedge \neg \varphi_2) \mathsf{R} \neg (\neg \varphi_1 \wedge \neg \varphi_2) \\
+    & \equiv (\neg \varphi_1 \vee \varphi_2) \mathsf{R} (\varphi_1 \vee \varphi_2) \\
+\end{aligned}
+$$
