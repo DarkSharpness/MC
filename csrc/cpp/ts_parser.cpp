@@ -1,5 +1,5 @@
 #include "LTL/error.h"
-#include "LTL/input.h"
+#include "LTL/ts.h"
 #include "utils/dynamic_bitset.h"
 #include "utils/irange.h"
 #include <algorithm>
@@ -55,6 +55,13 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
         readline(is) >> result.transitions.emplace_back();
     for ([[maybe_unused]] const auto _ : irange(result.num_states))
         readset(is, result.ap_sets.emplace_back(kNumAP));
+
+    static constexpr auto build = [](TSGraph &g) {
+        g.atomic_rev_map.reserve(g.atomic_map.size());
+        for (const auto &s : g.atomic_map)
+            g.atomic_rev_map[s] = g.atomic_rev_map.size();
+    };
+    build(result);
     return result;
 }
 

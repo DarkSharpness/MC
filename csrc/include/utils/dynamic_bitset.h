@@ -59,7 +59,6 @@ public:
             d = 0;
     }
 
-
     auto operator[](std::size_t i) const -> bool {
         return test(i);
     }

@@ -1,20 +1,30 @@
+#include "LTL/error.h"
 #include "LTL/input.h"
 #include "LTL/node.h"
 #include "LTL/node_impl.h"
+#include "LTL/ts.h"
 #include "LTLLexer.h"
 #include "LTLParser.h"
 #include "LTLVisitor.h"
+#include "utils/dynamic_bitset.h"
 #include "utils/error.h"
+#include "utils/irange.h"
 #include <ANTLRInputStream.h>
 #include <CommonTokenStream.h>
 #include <any>
 #include <memory>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <string_view>
 
 namespace dark {
 
 namespace {
 
 struct Visitor final : LTLVisitor {
+    Visitor(const TSGraph &graph) : graph(graph) {}
+
     auto visitProg(LTLParser::ProgContext *) -> std::any override;
     auto visitNot(LTLParser::NotContext *) -> std::any override;
     auto visitDisjunction(LTLParser::DisjunctionContext *) -> std::any override;
@@ -27,23 +37,25 @@ struct Visitor final : LTLVisitor {
     auto visitParen(LTLParser::ParenContext *) -> std::any override;
     auto visitUntil(LTLParser::UntilContext *) -> std::any override;
 
-    NodePtr result;
-
     template <typename T>
     [[nodiscard]]
     auto visit(T *ctx) -> NodePtr {
         LTLVisitor::visit(ctx);
         return std::move(result);
     }
+
     [[nodiscard]]
     auto set(NodePtr node) -> std::any {
         result = std::move(node);
         return {};
     }
+
+    NodePtr result;
+    const TSGraph &graph;
 };
 
 auto Visitor::visitAtomic(LTLParser::AtomicContext *ctx) -> std::any {
-    return set(std::make_unique<AtomicNode>(ctx->getText()));
+    return set(std::make_unique<AtomicNode>(graph.map_atomic(ctx->getText())));
 }
 
 auto Visitor::visitParen(LTLParser::ParenContext *ctx) -> std::any {
@@ -98,18 +110,60 @@ auto recursive_check(const BaseNode *node) -> void {
     }
 }
 
-} // namespace
-
-auto LTLFormula::read(std::istream &is) -> LTLFormula {
+auto readLTL(std::istream &is, const TSGraph &graph) -> NodePtr {
     auto input   = antlr4::ANTLRInputStream(is);
     auto lexer   = LTLLexer(&input);
     auto tokens  = antlr4::CommonTokenStream(&lexer);
     auto parser  = LTLParser(&tokens);
     auto tree    = parser.prog();
-    auto visitor = Visitor();
+    auto visitor = Visitor(graph);
     auto root    = visitor.visit(tree);
     recursive_check(root.get());
-    return LTLFormula(std::move(root));
+    return root;
+}
+
+} // namespace
+
+auto TSGraph::map_atomic(std::string_view action) const -> std::size_t {
+    auto it = atomic_rev_map.find(action);
+    docheck(it != atomic_rev_map.end(), "Unknown atomic action: {}", action);
+    return it->second;
+}
+
+auto LTLProgram::work(std::istream &gs, std::istream &ts, std::ostream &os) -> void {
+    static constexpr auto readline = [](std::istream &is) {
+        auto line = std::string{};
+        docheck(std::getline(is, line), "expect more lines");
+        return std::stringstream{std::move(line)};
+    };
+
+    const auto graph  = TSGraph::read(gs);
+    auto num_test_all = std::size_t{};
+    auto num_test_one = std::size_t{};
+    readline(ts) >> num_test_all >> num_test_one;
+
+    const auto view = TSView{graph};
+    for ([[maybe_unused]] const auto _ : irange(num_test_all)) {
+        auto ss      = readline(ts);
+        auto formula = readLTL(ss, graph);
+        os << static_cast<int>(verifyLTL(formula.get(), view)) << '\n';
+    }
+
+    auto bitset = dynamic_bitset{graph.states()};
+
+    for ([[maybe_unused]] const auto _ : irange(num_test_one)) {
+        auto ss         = readline(ts);
+        const auto view = [&] {
+            auto num = std::size_t{};
+            ss >> num;
+            bitset.set(num, true);
+            auto view = TSView{graph, bitset};
+            bitset.set(num, false);
+            return view;
+        }();
+        auto formula = readLTL(ss, graph);
+        os << static_cast<int>(verifyLTL(formula.get(), view)) << '\n';
+    }
 }
 
 } // namespace dark

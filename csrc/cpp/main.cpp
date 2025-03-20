@@ -2,8 +2,6 @@
 #include <iostream>
 
 auto main() -> int {
-    auto &is     = std::cin;
-    auto graph   = dark::TSGraph::read(is);
-    auto formula = dark::LTLFormula::read(is);
+    dark::LTLProgram::work(std::cin, std::cin, std::cout);
     return 0;
 }

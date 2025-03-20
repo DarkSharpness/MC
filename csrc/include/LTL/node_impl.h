@@ -1,6 +1,5 @@
 #pragma once
 #include "node.h"
-#include <string>
 
 namespace dark {
 
@@ -48,8 +47,8 @@ struct UntilNode final : BinaryNode {
 };
 
 struct AtomicNode final : BaseNode {
-    std::string name;
-    AtomicNode(std::string name) : name(std::move(name)) {}
+    std::size_t index;
+    AtomicNode(std::size_t index) : index(index) {}
 };
 
 } // namespace dark
