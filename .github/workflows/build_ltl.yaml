@@ -1,7 +1,12 @@
+name: Build LTL from C++ Source Code
+
 on:
     push:
         tags:
             - 'r*'
+
+permissions:
+  contents: write
 
 jobs:
   build_cpp:
@@ -23,7 +28,7 @@ jobs:
         run: |
           antlr4 -visitor -no-listener -Dlanguage=Cpp csrc/antlr/LTL.g4
 
-      - name: Build and run unit tests
+      - name: Build binary from source
         run: xmake -y
 
       - name: Create GitHub Release and Upload Binary
