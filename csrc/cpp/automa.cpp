@@ -258,7 +258,7 @@ auto SetBuilder::debug(std::ostream &os) const -> void {
         else
             display[i] = std::format("(O {})", nameof(f[0])); // next
     }
-    
+
     for (const auto i : irange(formulas.size()))
         os << std::format("Formula {}: {}\n", i, display[i]);
 }

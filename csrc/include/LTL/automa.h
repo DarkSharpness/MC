@@ -34,6 +34,7 @@ struct AutomaImpl : public Automa {
 struct GNBA : private __detail::AutomaImpl<GNBA> {
 public:
     static auto build(BaseNode *, std::size_t) -> GNBA;
+
 private:
     std::vector<dynamic_bitset> final_states_list;
 };

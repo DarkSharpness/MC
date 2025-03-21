@@ -171,7 +171,7 @@ def _parase_nba_grammar(rule: str) -> Tuple[BaseNode, bool]:
             return result[-1]
         elif isinstance(node, AddNode):
             assert len(node.lst) > 0, "Invalid node"
-            cnt = sum([_post_check(x) for x in node.lst]) 
+            cnt = sum([_post_check(x) for x in node.lst])
             assert cnt in [0, len(node.lst)], \
                 "Either all or none of the sub node should be infinite:" \
                 f"\n {node = }, {cnt = }"
@@ -468,7 +468,7 @@ class FSM:
                         new_state |= 1 << end
                 if new_state != 0:
                     dests.append((new_state, label))
-            
+
             new_worker.add_edges(cur_state, *dests, final=is_final)
             for end, _ in dests:
                 if end not in visit:
