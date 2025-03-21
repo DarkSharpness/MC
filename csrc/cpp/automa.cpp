@@ -364,29 +364,6 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
         return initial;
     }();
 
-    auto can_visit = [num_ap, formulas](const fset &x, const fset &y) {
-        // check those next and until formula
-        for (const auto i : irange(num_ap, formulas.size())) {
-            const auto &f = formulas[i];
-            if (f.is_next()) { // (f = next f[0])
-                if (x[i] != y[f[0]])
-                    return false;
-            } else if (f.is_until()) {
-                if (x[f[1]]) // ok, already true
-                    continue;
-                if (x[i]) {
-                    assume(x[f[0]], "implementation error");
-                    if (!y[i])
-                        return false;
-                    continue;
-                }
-                if (x[f[0]] && y[i])
-                    return false;
-            }
-        }
-        return true;
-    };
-
     auto transition = [&] {
         auto transition = std::vector<EdgeMap>(size);
         auto visit_aux  = VisitHelper{num_ap, formulas};
@@ -395,26 +372,22 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
             auto trigger  = s.subset(num_ap);
             auto targets  = bitset{size};
             visit_aux.build(s);
-            for (const auto j : irange(size)) {
-                if (can_visit(s, sets[j]))
+            for (const auto j : irange(size))
+                if (visit_aux.accept(sets[j]))
                     targets[j] = true;
-                assume(can_visit(s, sets[j]) == visit_aux.accept(sets[j]), "Implementation error");
-            }
             transition[i] = {{trigger, targets}};
         }
         return transition;
     }();
 
-    auto result  = GNBA{};
-    using Automa = __detail::Automa;
-
+    auto result = GNBA{};
+    using __detail::Automa;
     static_cast<Automa &>(result) = Automa{
         .num_states     = size,
         .num_triggers   = num_ap,
         .initial_states = std::move(initial_set),
         .transitions    = std::move(transition),
     };
-
     auto final_list = [&] {
         auto final = std::vector<bitset>{};
         for (const auto i : irange(num_ap, formulas.size())) {
@@ -429,7 +402,6 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
         }
         return final;
     }();
-
     result.final_states_list = std::move(final_list);
     return result;
 }
