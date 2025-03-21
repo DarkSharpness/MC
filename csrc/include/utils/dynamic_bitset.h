@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
+#include <string>
 #include <vector>
 
 namespace dark {
@@ -84,6 +85,13 @@ public:
         for (std::size_t i = 0; i < m_data.size(); ++i)
             m_data[i] ^= rhs.m_data[i];
         return *this;
+    }
+
+    auto to_string() const -> std::string {
+        std::string result;
+        for (std::size_t i = 0; i < m_length; ++i)
+            result.push_back(test(i) ? '1' : '0');
+        return result;
     }
 
 private:

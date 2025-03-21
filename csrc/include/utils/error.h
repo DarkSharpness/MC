@@ -73,14 +73,23 @@ private:
 
 public:
     [[gnu::always_inline]]
+    explicit assume(_Cond &&cond, _Src_t loc = _Src_t::current())
+        requires(sizeof...(_Args) == 0)
+    {
+        if (cond) [[likely]]
+            return;
+        panic(loc.function_name(), loc, "assumption failed");
+    }
+
+    [[gnu::always_inline]]
     explicit assume(
-        _Cond &&cond, std::format_string<_Args...> fmt = "", _Args &&...args,
-        _Src_t loc = _Src_t::current() // Need c++20
+        _Cond &&cond, std::format_string<_Args...> fmt, _Args &&...args,
+        _Src_t loc = _Src_t::current()
     ) {
         if (cond) [[likely]]
             return;
-        if constexpr (sizeof...(_Args) == 0)
-            panic(loc.function_name(), loc, "assumption failed");
+        if constexpr (sizeof...(args) == 0)
+            panic(std::string(fmt.get()), loc, "assumption failed");
         else
             panic<_Args...>(fmt, std::forward<_Args>(args)..., loc, "assumption failed");
     }
