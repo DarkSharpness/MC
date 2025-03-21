@@ -1,6 +1,6 @@
 #include "LTL/error.h"
 #include "LTL/ts.h"
-#include "utils/dynamic_bitset.h"
+#include "utils/bitset.h"
 #include "utils/irange.h"
 #include <algorithm>
 #include <cstddef>
@@ -31,7 +31,7 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
         std::ranges::copy(std::istream_iterator<T>{ss}, std::istream_iterator<T>{}, iter);
     };
     auto initial_set   = std::vector<std::size_t>{};
-    const auto readset = [&initial_set](std::istream &is, dynamic_bitset &set) {
+    const auto readset = [&initial_set](std::istream &is, bitset &set) {
         initial_set.clear();
         readrange(is, std::size_t{}, std::back_inserter(initial_set));
         if (is.bad()) { // read -1
@@ -39,7 +39,7 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
         } else { // meeting a set
             for (const auto i : initial_set) {
                 docheck(i < set.size(), "initial state index out of range");
-                set.set(i);
+                set[i] = true;
             }
         }
     };

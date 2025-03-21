@@ -1,5 +1,5 @@
 #pragma once
-#include "utils/dynamic_bitset.h"
+#include "utils/bitset.h"
 #include <cstddef>
 #include <iosfwd>
 #include <optional>
@@ -27,12 +27,12 @@ public:
 private:
     std::size_t num_states;
     std::size_t num_transitions;
-    dynamic_bitset initial_set;
+    bitset initial_set;
 
     std::vector<std::string> action_map; // action
     std::vector<std::string> atomic_map; // atomic proposition
     std::vector<Transition> transitions;
-    std::vector<dynamic_bitset> ap_sets;
+    std::vector<bitset> ap_sets;
 
     // Post init data
     std::unordered_map<std::string_view, std::size_t> atomic_rev_map;
@@ -40,18 +40,18 @@ private:
 };
 
 struct TSView {
-    TSView(const TSGraph &, std::optional<dynamic_bitset> = std::nullopt);
+    TSView(const TSGraph &, std::optional<bitset> = std::nullopt);
 
     using Transition = TSGraph::Transition;
 
     std::size_t num_states;                  // number of states
     std::size_t num_atomics;                 // number of atomic propositions
-    dynamic_bitset initial_set;              // initial state
+    bitset initial_set;                      // initial state
     std::span<const Transition> transitions; // raw transitions
-    std::span<const dynamic_bitset> ap_sets; // ap of each state
+    std::span<const bitset> ap_sets;         // ap of each state
 };
 
-inline TSView::TSView(const TSGraph &graph, std::optional<dynamic_bitset> new_init) :
+inline TSView::TSView(const TSGraph &graph, std::optional<bitset> new_init) :
     num_states(graph.num_states), num_atomics(graph.atomic_map.size()),
     initial_set(new_init.value_or(graph.initial_set)), transitions(graph.transitions),
     ap_sets(graph.ap_sets) {}

@@ -1,6 +1,6 @@
 #pragma once
 #include "node.h"
-#include "utils/dynamic_bitset.h"
+#include "utils/bitset.h"
 #include "utils/type.h"
 #include <cstddef>
 #include <unordered_map>
@@ -11,13 +11,15 @@ namespace dark {
 namespace __detail {
 
 struct Automa {
-    using EdgeSet = std::vector<dynamic_bitset>; // action -> set of visitable states
-
     std::size_t num_states;   // states
-    std::size_t num_triggers; // trigger of a transition
+    std::size_t num_triggers; // triggers
 
-    dynamic_bitset initial_states;
-    std::unordered_map<std::size_t, EdgeSet> transitions;
+    // mapping: (trigger -> all potential next states)
+    using EdgeMap = std::unordered_map<bitset, bitset>;
+
+    // state index -> (which state can be reached next)
+    bitset initial_states;
+    std::unordered_map<bitset, EdgeMap> transitions;
 };
 
 struct StateTag;
@@ -36,7 +38,7 @@ public:
     static auto build(BaseNode *, std::size_t) -> GNBA;
 
 private:
-    std::vector<dynamic_bitset> final_states_list;
+    std::vector<bitset> final_states_list;
 };
 
 struct NBA : private __detail::AutomaImpl<NBA> {
@@ -44,7 +46,7 @@ public:
     static auto fromGNBA(const GNBA &) -> NBA;
 
 private:
-    dynamic_bitset final_state;
+    bitset final_state;
 };
 
 } // namespace dark

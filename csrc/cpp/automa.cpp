@@ -3,11 +3,12 @@
 #include "LTL/node.h"
 #include "LTL/node_impl.h"
 #include "automa_aux.h"
-#include "utils/dynamic_bitset.h"
+#include "utils/bitset.h"
 #include "utils/error.h"
 #include "utils/irange.h"
 #include <cstddef>
 #include <format>
+#include <iostream>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -121,9 +122,12 @@ auto debug_check_formula(std::span<const Formula> formulas, std::size_t num_ap) 
     for (const auto i : irange(num_ap, formulas.size())) {
         const auto &f = formulas[i];
         assume(f.is_binary() || f.is_unary(), "Invalid formula type");
-        assume(f[0].original() < i, "Invalid formula index");
+        const auto valid = [i](fid f) -> bool {
+            return f.original() < i || f == fid::True || f == fid::False;
+        };
+        assume(valid(f[0]), "Invalid formula index");
         if (f.is_binary())
-            assume(f[1].original() < i, "Invalid formula index");
+            assume(valid(f[1]), "Invalid formula index");
     }
 }
 
@@ -135,7 +139,7 @@ public:
         return builder;
     }
 
-    auto elementary_sets() const -> std::span<const dynamic_bitset> {
+    auto elementary_sets() const -> std::span<const bitset> {
         return sets;
     }
 
@@ -153,10 +157,10 @@ private:
 
     // whether the set is an elementary set. if so, return the full bitset
     // the given set already define whether the ap/given formula is true or false
-    auto check(dynamic_bitset) const -> std::optional<dynamic_bitset>;
+    auto check(bitset) const -> std::optional<bitset>;
 
     // finally accepted sets
-    std::vector<dynamic_bitset> sets;
+    std::vector<bitset> sets;
 
     // common parameters
     const std::span<const Formula> formulas;
@@ -186,7 +190,7 @@ auto SetBuilder::prepare() -> std::vector<std::size_t> {
     return {indice_set.begin(), indice_set.end()};
 }
 
-auto SetBuilder::check(dynamic_bitset set) const -> std::optional<dynamic_bitset> {
+auto SetBuilder::check(bitset set) const -> std::optional<bitset> {
     const auto eval = [&set](fid f) -> bool {
         if (f.is_negation())
             return f == fid::False ? false : !set[(~f).raw()];
@@ -198,13 +202,13 @@ auto SetBuilder::check(dynamic_bitset set) const -> std::optional<dynamic_bitset
         const auto &f = formulas[i];
         assume(!f.is_atomic(), "Atomic formula should not be here");
         if (f.is_conj()) {
-            set.set(i, eval(f[0]) && eval(f[1]));
+            set[i] = eval(f[0]) && eval(f[1]);
         } else if (f.is_until()) {
             // f is uncertain, and maybe conflict
             // use local until property to check
             const auto lhs = eval(f[0]);
             const auto rhs = eval(f[1]);
-            const auto cur = set[i];
+            const auto cur = bool(set[i]);
             if (!cur && rhs)
                 return std::nullopt;
             if (cur && !lhs && !rhs)
@@ -219,11 +223,11 @@ auto SetBuilder::build() -> void {
     const auto indices = prepare();
     const auto size    = indices.size();
     assume(size < 32, "Too many indices to enumerate, stop here");
-    auto current_bitset = dynamic_bitset{formulas.size()};
+    auto current_bitset = bitset{formulas.size()};
     // enumerate all AP and uncertain formulas
     for (const auto i : irange(std::size_t{1} << size)) {
         for (const auto j : irange(size))
-            current_bitset.set(indices[j], (i >> j) & 1);
+            current_bitset[indices[j]] = (i >> j) & 1;
         if (auto result = check(current_bitset))
             sets.push_back(std::move(*result));
     }
@@ -274,18 +278,24 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
     const auto collector = FormulaCollector::from(ptr, num_ap);
     const auto formulas  = collector.get_formulas();
     debug_check_formula(formulas, num_ap);
-    // const auto root = collector.map(ptr);
-
-    const auto builder = SetBuilder::from(formulas, num_ap);
-
-    // {
-    //     auto os = debugger();
-    //     builder.debug(os);
-    // }
-    // for (auto set : builder.elementary_sets())
-    //     debugger() << set.to_string() << '\n';
 
     // First, find all the elementary set of the formulas
+    const auto builder = SetBuilder::from(formulas, num_ap);
+
+    builder.debug(std::cerr);
+
+    const auto sets = builder.elementary_sets();
+    const auto size = sets.size(); // the size of the GNBA
+    const auto root = collector.map(ptr);
+    for (const auto &s : sets)
+        std::cerr << s.to_string() << '\n';
+
+    auto initial   = bitset{size}; // which of the given set can be initial
+    const auto idx = root.original();
+    for (const auto i : irange(num_ap))
+        if (sets[i][idx] != root.is_negation())
+            initial[i] = true; // if negation, require false (not in set)
+
     auto result = GNBA{};
     return result;
 }

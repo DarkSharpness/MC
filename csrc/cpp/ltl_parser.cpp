@@ -6,7 +6,7 @@
 #include "LTLLexer.h"
 #include "LTLParser.h"
 #include "LTLVisitor.h"
-#include "utils/dynamic_bitset.h"
+#include "utils/bitset.h"
 #include "utils/error.h"
 #include "utils/irange.h"
 #include <ANTLRInputStream.h>
@@ -189,16 +189,16 @@ auto LTLProgram::work(std::istream &gs, std::istream &ts, std::ostream &os) -> v
         os << static_cast<int>(verifyLTL(formula.get(), view)) << '\n';
     }
 
-    auto bitset = dynamic_bitset{graph.states()};
+    auto set = bitset{graph.states()};
 
     for ([[maybe_unused]] const auto _ : irange(num_test_one)) {
         auto ss         = readline(ts);
         const auto view = [&] {
             auto num = std::size_t{};
             ss >> num;
-            bitset.set(num, true);
-            auto view = TSView{graph, bitset};
-            bitset.set(num, false);
+            set[num]  = true;
+            auto view = TSView{graph, set};
+            set[num]  = false;
             return view;
         }();
         auto formula = readLTL(ss, graph);

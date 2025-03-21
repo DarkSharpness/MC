@@ -1,6 +1,6 @@
 // should only be included once
 #ifndef AUTOMA_AUX_H
-#define AUTjson_AUX_H
+#define AUTOMA_AUX_H
 #include <bit>
 #include <cstddef>
 #include <cstdint>
