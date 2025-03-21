@@ -7,8 +7,11 @@
 #include "utils/error.h"
 #include "utils/irange.h"
 #include <cstddef>
+#include <format>
 #include <optional>
+#include <ostream>
 #include <span>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -136,6 +139,8 @@ public:
         return sets;
     }
 
+    auto debug(std::ostream &os) const -> void;
+
 private:
     SetBuilder(std::span<const Formula> formulas, std::size_t num_aps) :
         formulas(formulas), num_aps(num_aps) {}
@@ -214,7 +219,7 @@ auto SetBuilder::build() -> void {
     const auto indices = prepare();
     const auto size    = indices.size();
     assume(size < 32, "Too many indices to enumerate, stop here");
-    auto current_bitset = dynamic_bitset{num_aps};
+    auto current_bitset = dynamic_bitset{formulas.size()};
     // enumerate all AP and uncertain formulas
     for (const auto i : irange(std::size_t{1} << size)) {
         for (const auto j : irange(size))
@@ -222,6 +227,40 @@ auto SetBuilder::build() -> void {
         if (auto result = check(current_bitset))
             sets.push_back(std::move(*result));
     }
+}
+
+[[maybe_unused]]
+auto SetBuilder::debug(std::ostream &os) const -> void {
+    // first of all print all the formula
+    os << std::format("Number of atomic propositions: {}\n", num_aps);
+    os << std::format("Number of formulas: {}\n", formulas.size());
+    auto display = std::vector<std::string>(formulas.size());
+    auto nameof  = [&display](fid f) -> std::string {
+        if (f.is_negation())
+            return f == fid::False ? "False" : "!" + display[(~f).raw()];
+        else
+            return f == fid::True ? "True" : display[f.raw()];
+    };
+
+    for (const auto i : irange(num_aps)) {
+        const auto &f = formulas[i];
+        assume(f.is_atomic(), "First num_aps must be atomic");
+        display[i] = std::format("[{}]", i);
+    }
+
+    for (const auto i : irange(num_aps, formulas.size())) {
+        const auto &f = formulas[i];
+        assume(!f.is_atomic(), "Atomic formula should not be here");
+        if (f.is_conj())
+            display[i] = std::format("({} /\\ {})", nameof(f[0]), nameof(f[1]));
+        else if (f.is_until())
+            display[i] = std::format("({} U {})", nameof(f[0]), nameof(f[1]));
+        else
+            display[i] = std::format("(O {})", nameof(f[0])); // next
+    }
+    
+    for (const auto i : irange(formulas.size()))
+        os << std::format("Formula {}: {}\n", i, display[i]);
 }
 
 } // namespace
@@ -238,6 +277,13 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
     // const auto root = collector.map(ptr);
 
     const auto builder = SetBuilder::from(formulas, num_ap);
+
+    // {
+    //     auto os = debugger();
+    //     builder.debug(os);
+    // }
+    // for (auto set : builder.elementary_sets())
+    //     debugger() << set.to_string() << '\n';
 
     // First, find all the elementary set of the formulas
     auto result = GNBA{};

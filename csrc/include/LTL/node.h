@@ -1,4 +1,5 @@
 #pragma once
+#include <iosfwd>
 #include <memory>
 
 namespace dark {
@@ -15,6 +16,8 @@ struct BaseNode {
     auto is() const -> const T * {
         return dynamic_cast<const T *>(this);
     }
+    // for internal debug use
+    auto debug_print(std::ostream &) const -> void;
 };
 
 using NodePtr = std::unique_ptr<BaseNode>;

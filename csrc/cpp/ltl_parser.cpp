@@ -133,6 +133,37 @@ auto readLTL(std::istream &is, const TSGraph &graph) -> NodePtr {
 
 } // namespace
 
+auto BaseNode::debug_print(std::ostream &os) const -> void {
+    if (auto unary = is<UnaryNode>()) {
+        os << "(";
+        if (unary->is<NotNode>())
+            os << "! ";
+        if (unary->is<NextNode>())
+            os << "X ";
+        if (unary->is<AlwaysNode>())
+            os << "G ";
+        if (unary->is<EventualNode>())
+            os << "F ";
+        unary->child->debug_print(os);
+        os << ")";
+    } else if (auto binary = is<BinaryNode>()) {
+        os << "(";
+        binary->lhs->debug_print(os);
+        if (binary->is<DisjNode>())
+            os << " \\/ ";
+        if (binary->is<UntilNode>())
+            os << " U ";
+        if (binary->is<ImplNode>())
+            os << " -> ";
+        if (binary->is<ConjNode>())
+            os << " /\\ ";
+        binary->rhs->debug_print(os);
+        os << ")";
+    } else if (auto atomic = is<AtomicNode>()) {
+        os << atomic->index;
+    }
+}
+
 auto TSGraph::map_atomic(std::string_view action) const -> std::size_t {
     auto it = atomic_rev_map.find(action);
     docheck(it != atomic_rev_map.end(), "Unknown atomic action: {}", action);
