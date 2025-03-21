@@ -98,6 +98,10 @@ public:
         return type == op::CONJ;
     }
 
+    auto is_next() const -> bool {
+        return type == op::NEXT;
+    }
+
     auto is_until() const -> bool {
         return type == op::UNTIL;
     }

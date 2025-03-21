@@ -19,7 +19,7 @@ struct Automa {
 
     // state index -> (which state can be reached next)
     bitset initial_states;
-    std::unordered_map<bitset, EdgeMap> transitions;
+    std::vector<EdgeMap> transitions;
 };
 
 struct StateTag;

@@ -8,7 +8,6 @@
 #include "utils/irange.h"
 #include <cstddef>
 #include <format>
-#include <iostream>
 #include <optional>
 #include <ostream>
 #include <span>
@@ -21,6 +20,23 @@
 namespace dark {
 
 namespace {
+
+struct formula_bitset : private bitset {
+    using bitset::bitset;
+    using bitset::subset;
+    using bitset::to_string;
+    using bitset::operator[];
+    using bitset::as_bitset;
+    using bitset::size;
+    auto operator[](fid f) const -> bool {
+        if (f.is_negation())
+            return f == fid::False ? false : !(*this)[(~f).raw()];
+        else
+            return f == fid::True ? true : (*this)[f.raw()];
+    }
+};
+
+using fset = formula_bitset;
 
 struct FormulaCollector {
     auto get_formulas() const -> std::span<const Formula> {
@@ -139,7 +155,7 @@ public:
         return builder;
     }
 
-    auto elementary_sets() const -> std::span<const bitset> {
+    auto elementary_sets() const -> std::span<const fset> {
         return sets;
     }
 
@@ -157,10 +173,10 @@ private:
 
     // whether the set is an elementary set. if so, return the full bitset
     // the given set already define whether the ap/given formula is true or false
-    auto check(bitset) const -> std::optional<bitset>;
+    auto check(fset) const -> std::optional<fset>;
 
     // finally accepted sets
-    std::vector<bitset> sets;
+    std::vector<fset> sets;
 
     // common parameters
     const std::span<const Formula> formulas;
@@ -190,24 +206,17 @@ auto SetBuilder::prepare() -> std::vector<std::size_t> {
     return {indice_set.begin(), indice_set.end()};
 }
 
-auto SetBuilder::check(bitset set) const -> std::optional<bitset> {
-    const auto eval = [&set](fid f) -> bool {
-        if (f.is_negation())
-            return f == fid::False ? false : !set[(~f).raw()];
-        else
-            return f == fid::True ? true : set[f.raw()];
-    };
-
+auto SetBuilder::check(fset set) const -> std::optional<fset> {
     for (const auto i : irange(num_aps, formulas.size())) {
         const auto &f = formulas[i];
         assume(!f.is_atomic(), "Atomic formula should not be here");
         if (f.is_conj()) {
-            set[i] = eval(f[0]) && eval(f[1]);
+            set[i] = set[f[0]] && set[f[1]];
         } else if (f.is_until()) {
             // f is uncertain, and maybe conflict
             // use local until property to check
-            const auto lhs = eval(f[0]);
-            const auto rhs = eval(f[1]);
+            const auto lhs = set[f[0]];
+            const auto rhs = set[f[1]];
             const auto cur = bool(set[i]);
             if (!cur && rhs)
                 return std::nullopt;
@@ -223,7 +232,7 @@ auto SetBuilder::build() -> void {
     const auto indices = prepare();
     const auto size    = indices.size();
     assume(size < 32, "Too many indices to enumerate, stop here");
-    auto current_bitset = bitset{formulas.size()};
+    auto current_bitset = fset{formulas.size()};
     // enumerate all AP and uncertain formulas
     for (const auto i : irange(std::size_t{1} << size)) {
         for (const auto j : irange(size))
@@ -267,6 +276,66 @@ auto SetBuilder::debug(std::ostream &os) const -> void {
         os << std::format("Formula {}: {}\n", i, display[i]);
 }
 
+struct VisitHelper {
+public:
+    VisitHelper(std::size_t num_aps, std::span<const Formula> formulas) :
+        num_aps(num_aps), formulas(formulas) {}
+
+    auto build(const fset &f) -> void;
+    auto accept(const fset &f) const -> bool;
+
+private:
+    bitset require;
+    bitset indices;
+
+    const std::size_t num_aps;
+    const std::span<const Formula> formulas;
+};
+
+auto VisitHelper::build(const fset &x) -> void {
+    bitset new_r{formulas.size()};
+    bitset new_i{formulas.size()};
+    auto insert = [&new_r, &new_i](std::size_t idx, bool value) {
+        new_i[idx] = true;
+        new_r[idx] = value;
+    };
+    for (const auto i : irange(num_aps, formulas.size())) {
+        const auto &f = formulas[i];
+        assume(!f.is_atomic(), "Atomic formula should not be here");
+        if (f.is_next()) {
+            if (f[0] == fid::True || f[0] == fid::False)
+                continue; // nothing to do
+
+            // x[i] = y[f[0]]
+            insert(f[0].original(), f[0].is_negation() ^ x[i]);
+        } else if (f.is_until()) {
+            if (x[f[1]]) // ok, already true
+                continue;
+
+            if (x[i]) {
+                assume(x[f[0]], "implementation error");
+                insert(i, true);
+                continue;
+            }
+
+            if (x[f[0]])
+                insert(i, false);
+        }
+        // do nothing, all the atomic & next have already been set
+    }
+    this->require = std::move(new_r);
+    this->indices = std::move(new_i);
+}
+
+auto VisitHelper::accept(const fset &f) const -> bool {
+    assume(f.size() == indices.size() && f.size() == require.size());
+    // all the indiced formula must be satisfied
+    const auto &r = require.as_bitset();
+    const auto &i = indices.as_bitset();
+    const auto &F = f.as_bitset();
+    return (F & i) == r;
+}
+
 } // namespace
 
 // Transform an LTL formula into a GNBA
@@ -282,21 +351,86 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
     // First, find all the elementary set of the formulas
     const auto builder = SetBuilder::from(formulas, num_ap);
 
-    builder.debug(std::cerr);
-
     const auto sets = builder.elementary_sets();
     const auto size = sets.size(); // the size of the GNBA
     const auto root = collector.map(ptr);
-    for (const auto &s : sets)
-        std::cerr << s.to_string() << '\n';
 
-    auto initial   = bitset{size}; // which of the given set can be initial
-    const auto idx = root.original();
-    for (const auto i : irange(num_ap))
-        if (sets[i][idx] != root.is_negation())
-            initial[i] = true; // if negation, require false (not in set)
+    auto initial_set = [&] {
+        auto initial   = bitset{size};
+        const auto idx = root.original();
+        for (const auto i : irange(size))
+            if (sets[i][idx] != root.is_negation())
+                initial[i] = true; // if negation, require false (not in set)
+        return initial;
+    }();
 
-    auto result = GNBA{};
+    auto can_visit = [num_ap, formulas](const fset &x, const fset &y) {
+        // check those next and until formula
+        for (const auto i : irange(num_ap, formulas.size())) {
+            const auto &f = formulas[i];
+            if (f.is_next()) { // (f = next f[0])
+                if (x[i] != y[f[0]])
+                    return false;
+            } else if (f.is_until()) {
+                if (x[f[1]]) // ok, already true
+                    continue;
+                if (x[i]) {
+                    assume(x[f[0]], "implementation error");
+                    if (!y[i])
+                        return false;
+                    continue;
+                }
+                if (x[f[0]] && y[i])
+                    return false;
+            }
+        }
+        return true;
+    };
+
+    auto transition = [&] {
+        auto transition = std::vector<EdgeMap>(size);
+        auto visit_aux  = VisitHelper{num_ap, formulas};
+        for (const auto i : irange(size)) {
+            const auto &s = sets[i];
+            auto trigger  = s.subset(num_ap);
+            auto targets  = bitset{size};
+            visit_aux.build(s);
+            for (const auto j : irange(size)) {
+                if (can_visit(s, sets[j]))
+                    targets[j] = true;
+                assume(can_visit(s, sets[j]) == visit_aux.accept(sets[j]), "Implementation error");
+            }
+            transition[i] = {{trigger, targets}};
+        }
+        return transition;
+    }();
+
+    auto result  = GNBA{};
+    using Automa = __detail::Automa;
+
+    static_cast<Automa &>(result) = Automa{
+        .num_states     = size,
+        .num_triggers   = num_ap,
+        .initial_states = std::move(initial_set),
+        .transitions    = std::move(transition),
+    };
+
+    auto final_list = [&] {
+        auto final = std::vector<bitset>{};
+        for (const auto i : irange(num_ap, formulas.size())) {
+            const auto &f = formulas[i];
+            if (f.is_until()) {
+                auto final_set = bitset{size};
+                for (const auto j : irange(size))
+                    if (!sets[j][i] || sets[j][f[1]])
+                        final_set[j] = true;
+                final.push_back(std::move(final_set));
+            }
+        }
+        return final;
+    }();
+
+    result.final_states_list = std::move(final_list);
     return result;
 }
 

@@ -122,8 +122,8 @@ private:
 public:
     using Base::reference;
 
-    bitset() = default;
-    bitset(std::size_t length) : Base(0), m_length(length) {
+    explicit bitset() = default;
+    explicit bitset(std::size_t length) : Base(0), m_length(length) {
         assume(length <= 64);
     }
 
@@ -133,6 +133,13 @@ public:
     auto resize(std::size_t length) -> void {
         assume(length <= 64);
         m_length = length;
+    }
+
+    auto subset(std::size_t n) const -> bitset {
+        assume(n <= m_length);
+        auto result     = *this;
+        result.m_length = n;
+        return result;
     }
 
     auto size() const -> std::size_t {
@@ -165,6 +172,10 @@ public:
     auto hash() const -> std::uint64_t {
         static_assert(sizeof(Base) == sizeof(std::uint64_t));
         return Base::to_ullong();
+    }
+
+    auto as_bitset() const -> const Base & {
+        return *this;
     }
 
 private:
