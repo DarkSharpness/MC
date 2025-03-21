@@ -44,15 +44,15 @@ struct TSView {
 
     using Transition = TSGraph::Transition;
 
-    std::size_t num_states;
-    std::size_t num_transitions;
-    dynamic_bitset initial_set;
-    std::span<const Transition> transitions;
-    std::span<const dynamic_bitset> ap_sets;
+    std::size_t num_states;                  // number of states
+    std::size_t num_atomics;                 // number of atomic propositions
+    dynamic_bitset initial_set;              // initial state
+    std::span<const Transition> transitions; // raw transitions
+    std::span<const dynamic_bitset> ap_sets; // ap of each state
 };
 
 inline TSView::TSView(const TSGraph &graph, std::optional<dynamic_bitset> new_init) :
-    num_states(graph.num_states), num_transitions(graph.num_transitions),
+    num_states(graph.num_states), num_atomics(graph.atomic_map.size()),
     initial_set(new_init.value_or(graph.initial_set)), transitions(graph.transitions),
     ap_sets(graph.ap_sets) {}
 

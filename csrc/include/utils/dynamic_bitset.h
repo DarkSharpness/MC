@@ -41,11 +41,13 @@ public:
     }
 
     auto test(std::size_t i) const -> bool {
+        assume(i < m_length);
         const auto [div, mod] = s_split(i);
         return (m_data[div] & (1ULL << mod)) != 0;
     }
 
     auto set(std::size_t i, bool value = true) -> void {
+        assume(i < m_length);
         const auto [di, mod] = s_split(i);
         if (value) {
             m_data[di] |= (1ULL << mod);

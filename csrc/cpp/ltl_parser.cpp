@@ -55,7 +55,15 @@ struct Visitor final : LTLVisitor {
 };
 
 auto Visitor::visitAtomic(LTLParser::AtomicContext *ctx) -> std::any {
-    return set(std::make_unique<AtomicNode>(graph.map_atomic(ctx->getText())));
+    const auto name = ctx->getText();
+    using enum AtomicNode::Type;
+    if (name == "true") {
+        return set(std::make_unique<AtomicNode>(0, True));
+    } else if (name == "false") {
+        return set(std::make_unique<AtomicNode>(0, False));
+    } else {
+        return set(std::make_unique<AtomicNode>(graph.map_atomic(name)));
+    }
 }
 
 auto Visitor::visitParen(LTLParser::ParenContext *ctx) -> std::any {
@@ -111,11 +119,12 @@ auto recursive_check(const BaseNode *node) -> void {
 }
 
 auto readLTL(std::istream &is, const TSGraph &graph) -> NodePtr {
-    auto input   = antlr4::ANTLRInputStream(is);
-    auto lexer   = LTLLexer(&input);
-    auto tokens  = antlr4::CommonTokenStream(&lexer);
-    auto parser  = LTLParser(&tokens);
-    auto tree    = parser.prog();
+    auto input  = antlr4::ANTLRInputStream(is);
+    auto lexer  = LTLLexer(&input);
+    auto tokens = antlr4::CommonTokenStream(&lexer);
+    auto parser = LTLParser(&tokens);
+    auto tree   = parser.prog();
+    docheck(parser.getNumberOfSyntaxErrors() == 0, "Syntax error in LTL formula");
     auto visitor = Visitor(graph);
     auto root    = visitor.visit(tree);
     recursive_check(root.get());

@@ -14,7 +14,25 @@ struct BinaryNode : BaseNode {
     BinaryNode(NodePtr l, NodePtr r) : lhs(std::move(l)), rhs(std::move(r)) {}
 };
 
+struct AtomicNode final : BaseNode {
+    std::size_t index;
+    enum class Type { Atomic, True, False } type;
+    AtomicNode(std::size_t index, Type tp = Type::Atomic) : index(index), type(tp) {}
+};
+
 struct NotNode final : UnaryNode {
+    using UnaryNode::UnaryNode;
+};
+
+struct NextNode final : UnaryNode {
+    using UnaryNode::UnaryNode;
+};
+
+struct AlwaysNode final : UnaryNode {
+    using UnaryNode::UnaryNode;
+};
+
+struct EventualNode final : UnaryNode {
     using UnaryNode::UnaryNode;
 };
 
@@ -30,25 +48,8 @@ struct ImplNode final : BinaryNode {
     using BinaryNode::BinaryNode;
 };
 
-struct NextNode final : UnaryNode {
-    using UnaryNode::UnaryNode;
-};
-
-struct AlwaysNode final : UnaryNode {
-    using UnaryNode::UnaryNode;
-};
-
-struct EventualNode final : UnaryNode {
-    using UnaryNode::UnaryNode;
-};
-
 struct UntilNode final : BinaryNode {
     using BinaryNode::BinaryNode;
-};
-
-struct AtomicNode final : BaseNode {
-    std::size_t index;
-    AtomicNode(std::size_t index) : index(index) {}
 };
 
 } // namespace dark
