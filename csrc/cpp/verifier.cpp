@@ -49,7 +49,7 @@ inline constexpr auto entry_pos = static_cast<std::size_t>(-1);
 // Whether an NBA accept at a state idx with atomic propositions AP as trigger
 auto accept(const NBA &nba, std::size_t idx, const bitset &AP) -> const bitset * {
     const auto &map = nba.transitions[idx];
-    if (auto it = map.find(AP); it != map.end())
+    if (auto it = map.find(AP & nba.used_ap_mask); it != map.end())
         return &it->second;
     return nullptr;
 }
@@ -65,14 +65,11 @@ auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
 template <typename _Fn>
 auto post(ProductSystem::State s, const NBA &nba, const TSView &ts, _Fn &&f) -> void {
     auto [idx_ts, idx_nba] = s;
-    for (const auto t : ts.transitions[idx_ts]) {
-        const auto &AP = ts.atomics[t]; // atomic propositions
-        if (auto *target = accept(nba, idx_nba, AP)) {
-            for (const auto q : *target) {
+    const auto &range      = (idx_ts == entry_pos) ? ts.initial_set : ts.transitions[idx_ts];
+    for (const auto t : range)
+        if (auto *target = accept(nba, idx_nba, ts.atomics[t]))
+            for (const auto q : *target)
                 f({t, q});
-            }
-        }
-    }
 }
 
 auto ProductSystem::reachable_cycle(State s) -> bool {
@@ -83,6 +80,8 @@ auto ProductSystem::reachable_cycle(State s) -> bool {
         U.pop();
         auto has_unvisited = bool{};
         post(s, nba, ts, [&](State s) {
+            if (R.contains(s))
+                return;
             U.push(s);
             R.insert(s);
             has_unvisited = true;

@@ -173,8 +173,8 @@ public:
 
     auto debug(std::ostream &os) const -> PrettyInfo;
 
-    auto get_unused_mask() const -> const bitset & {
-        return unused_ap_mask;
+    auto get_used_mask() const -> const bitset & {
+        return used_ap;
     }
 
 private:
@@ -194,8 +194,8 @@ private:
     // finally accepted sets
     std::vector<fset> sets;
 
-    // unused ap mask
-    bitset unused_ap_mask;
+    // ap mask that appears in some subformula
+    bitset used_ap;
 
     // common parameters
     const std::span<const Formula> formulas;
@@ -203,11 +203,14 @@ private:
 };
 
 auto SetBuilder::prepare() -> std::vector<std::size_t> {
+    used_ap         = bitset{num_aps};
     auto indice_set = std::unordered_set<std::size_t>{};
     auto try_add_ap = [this, &indice_set](fid f) {
         const auto n = f.original();
-        if (n < num_aps)
+        if (n < num_aps) {
             indice_set.insert(n);
+            used_ap[n] = true;
+        }
     };
 
     // extract all the ap in the subformula and those uncertain
@@ -221,12 +224,6 @@ auto SetBuilder::prepare() -> std::vector<std::size_t> {
         if (f.is_uncertain())
             indice_set.insert(i);
     }
-
-    unused_ap_mask = bitset{num_aps};
-
-    for (const auto i : irange(num_aps))
-        if (!indice_set.contains(i))
-            unused_ap_mask[i] = true;
 
     return {indice_set.begin(), indice_set.end()};
 }
@@ -301,7 +298,7 @@ auto SetBuilder::debug(std::ostream &os) const -> PrettyInfo {
         os << std::format("Set {}: ", i);
         os << "{ ";
         for (const auto j : irange(s.size())) {
-            if (j < num_aps && unused_ap_mask[j])
+            if (j < num_aps && used_ap[j])
                 continue;
             os << nameof(fid(s[j] ? j : ~j)) << ' ';
         }
@@ -432,7 +429,7 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
         .num_triggers   = num_ap,
         .initial_states = make_initial(),
         .transitions    = make_transition(),
-        .unused_ap_mask = builder.get_unused_mask(),
+        .used_ap_mask   = builder.get_used_mask(),
     };
     result.final_states_list = make_final();
 

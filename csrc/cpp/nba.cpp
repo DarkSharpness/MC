@@ -15,7 +15,7 @@ auto __detail::Automa::validate() const -> void {
             assume(set.size() == num_states, "invalid set size");
         }
     }
-    assume(unused_ap_mask.size() == num_triggers, "invalid unused AP mask size");
+    assume(used_ap_mask.size() == num_triggers, "invalid unused AP mask size");
 }
 
 auto NBA::fromGNBA(const GNBA &src) -> NBA {
@@ -29,7 +29,7 @@ auto NBA::fromGNBA(const GNBA &src) -> NBA {
 
     dst.num_states     = new_size;
     dst.num_triggers   = src.num_triggers; // same AP set as trigger.
-    dst.unused_ap_mask = src.unused_ap_mask;
+    dst.used_ap_mask   = src.used_ap_mask;
     dst.initial_states = src.initial_states.expand(new_size);
     dst.final_states   = src.final_states_list[0].expand(new_size);
 
@@ -50,6 +50,17 @@ auto NBA::fromGNBA(const GNBA &src) -> NBA {
 
     dst.transitions = std::move(transitions);
     dst.validate();
+
+    [[maybe_unused]]
+    auto debug = [&] {
+        for (const auto i : irange(new_size))
+            for (const auto &[trig, set] : dst.transitions[i])
+                debugger() << "state " << i << " trigger " << trig.to_string() << " set "
+                           << set.to_string() << '\n';
+        debugger() << "mask: " << dst.used_ap_mask.to_string() << '\n';
+    };
+
+    // debug();
     return dst;
 }
 

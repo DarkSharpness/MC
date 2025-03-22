@@ -20,8 +20,8 @@ struct Automa {
     bitset initial_states;
     std::vector<EdgeMap> transitions;
 
-    // mask those unused triggers
-    bitset unused_ap_mask;
+    // only use the AP that appear in the formula
+    bitset used_ap_mask;
 
     // try to validate. if false, throw an exception
     auto validate() const -> void;
