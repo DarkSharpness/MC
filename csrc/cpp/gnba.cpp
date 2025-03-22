@@ -264,7 +264,6 @@ auto SetBuilder::build() -> void {
     }
 }
 
-[[maybe_unused]]
 auto SetBuilder::debug(std::ostream &os) const -> PrettyInfo {
     // first of all print all the formula
     os << std::format("Number of atomic propositions: {}\n", num_aps);
@@ -406,7 +405,6 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
         return initial;
     };
 
-    [[maybe_unused]]
     auto can_visit = [num_ap, formulas](const fset &x, const fset &y) {
         // check those next and until formula
         for (const auto i : irange(num_ap, formulas.size())) {
@@ -443,6 +441,12 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
                     if (visit_aux.accept(sets[j]))
                         targets[j] = true;
             }
+            call_in_debug_mode([&] {
+                for (const auto j : irange(size))
+                    assume(can_visit(s, sets[j]) == targets[j], "Invalid transition");
+                if (visit_aux.always_reject())
+                    assume(targets.none(), "Invalid transition");
+            });
             transition[i] = {{trigger, targets}};
         }
         return transition;
@@ -474,8 +478,7 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
     };
     result.final_states_list = make_final();
 
-    [[maybe_unused]]
-    auto debug = [&] {
+    call_in_debug_mode([&] {
         debugger() << "GNBA construction\n";
         auto pretty = [&] {
             auto os = debugger();
@@ -501,9 +504,8 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
         debugger() << "Final state sets:\n";
         for (const auto i : irange(result.final_states_list.size()))
             debugger() << "  " << to_indice(result.final_states_list[i]) << '\n';
-    };
+    });
 
-    // debug();
     return result;
 }
 

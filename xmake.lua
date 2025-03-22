@@ -21,14 +21,15 @@ target("antlr-g4")
     add_files("csrc/antlr/*.cpp")
     add_packages("antlr4-runtime")
 
+-- set macro DEBUG for debug mode
+
+
 target("error-handler")
     set_kind("static")
     set_warnings(warnings)
     add_cxflags(other_cxflags)
     add_includedirs("csrc/include/utils", {public = false})
     add_files("csrc/cpp/utils/*.cpp")
-    add_packages("antlr4-runtime")
-
 
 target("LTL")
     set_kind("binary")
@@ -38,3 +39,6 @@ target("LTL")
     add_includedirs("csrc/include")
     add_files("csrc/cpp/*.cpp")
     add_packages("antlr4-runtime")
+    if is_mode("debug") then
+        add_defines("_DARK_DEBUG")
+    end

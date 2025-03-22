@@ -5,8 +5,24 @@
 #include <source_location>
 #include <syncstream>
 #include <type_traits>
+#include <utility>
 
 namespace dark {
+
+inline constexpr auto IN_DEBUG =
+#ifdef _DARK_DEBUG
+    true
+#else
+    false
+#endif
+    ;
+
+template <std::invocable _Fn>
+[[gnu::always_inline]]
+inline auto call_in_debug_mode(_Fn &&fn) -> void {
+    if constexpr (IN_DEBUG)
+        std::invoke(std::forward<_Fn>(fn));
+}
 
 namespace __detail {
 
@@ -78,6 +94,8 @@ public:
     {
         if (cond) [[likely]]
             return;
+        if constexpr (IN_DEBUG)
+            std::unreachable();
         panic(loc.function_name(), loc, "assumption failed");
     }
 
@@ -88,6 +106,8 @@ public:
     ) {
         if (cond) [[likely]]
             return;
+        if constexpr (IN_DEBUG)
+            std::unreachable();
         if constexpr (sizeof...(args) == 0)
             panic(std::string(fmt.get()), loc, "assumption failed");
         else
@@ -99,6 +119,8 @@ public:
     explicit assume(_Cond &&cond, _Fn &&fn, _Args &&...args, _Src_t loc = _Src_t::current()) {
         if (cond) [[likely]]
             return;
+        if constexpr (IN_DEBUG)
+            std::unreachable();
         panic(
             __detail::invoke_callable(std::forward<_Fn>(fn), std::forward<_Args>(args)...), loc,
             "assumption failed"

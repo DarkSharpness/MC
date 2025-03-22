@@ -203,6 +203,9 @@ public:
             Base::operator[](i) = true;
     }
 
+    using Base::any;
+    using Base::none;
+
     auto operator[](std::size_t i) const -> bool {
         assume(i < m_length, "Subscript out of range");
         return Base::operator[](i);

@@ -64,16 +64,6 @@ auto NBA::fromGNBA(const GNBA &src) -> NBA {
     dst.transitions = std::move(transitions);
     dst.validate();
 
-    [[maybe_unused]]
-    auto debug = [&] {
-        for (const auto i : irange(new_size))
-            for (const auto &[trig, set] : dst.transitions[i])
-                debugger() << "state " << i << " trigger " << trig.to_string() << " set "
-                           << set.to_string() << '\n';
-        debugger() << "mask: " << dst.used_ap_mask.to_string() << '\n';
-    };
-
-    // debug();
     return dst;
 }
 

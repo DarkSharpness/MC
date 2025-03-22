@@ -27,11 +27,10 @@ public:
 
     static auto can_run(const TSView &ts, const NBA &nba) -> bool;
 
-    auto brute_force() -> bool;
-
 private:
     auto reachable_cycle(State s) -> bool;
     auto cycle_check(State s) -> bool;
+    auto brute_force() const -> bool;
 
     ProductSystem(const TSView &ts, const NBA &nba);
     const TSView &ts;
@@ -61,6 +60,7 @@ auto accept(const NBA &nba, std::size_t idx, const bitset &AP) -> const bitset *
 
 auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
     auto system = ProductSystem{ts, nba};
+    call_in_debug_mode([&] { system.brute_force(); });
     for (const auto i : nba.initial_states)
         if (system.reachable_cycle({entry_pos, i}))
             return true;
@@ -80,7 +80,6 @@ auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
                 }                                                                                  \
     } while (0)
 
-[[maybe_unused]]
 auto ProductSystem::reachable_cycle(State input) -> bool {
     U.push(input);
     R.insert(input);
@@ -130,8 +129,7 @@ auto ProductSystem::cycle_check(State start) -> bool {
     return false;
 }
 
-[[maybe_unused]]
-auto ProductSystem::brute_force() -> bool {
+auto ProductSystem::brute_force() const -> bool {
     auto initial_states = std::vector<State>{};
     for (const auto i : nba.initial_states) {
         const auto cur = State{entry_pos, i};
