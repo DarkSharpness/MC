@@ -319,6 +319,7 @@ public:
 private:
     bitset require;
     bitset indices;
+    bool early_reject;
 
     const std::size_t num_aps;
     const std::span<const Formula> formulas;
@@ -327,16 +328,26 @@ private:
 auto VisitHelper::build(const fset &x) -> void {
     bitset new_r{formulas.size()};
     bitset new_i{formulas.size()};
-    auto insert = [&new_r, &new_i](std::size_t idx, bool value) {
-        new_i[idx] = true;
-        new_r[idx] = value;
+    auto insert = [&new_r, &new_i, this](std::size_t idx, bool value) {
+        if (new_i[idx] && new_r[idx] != value) {
+            // conflicting requirement
+            early_reject = true;
+        } else {
+            new_i[idx] = true;
+            new_r[idx] = value;
+        }
     };
+    early_reject = false;
     for (const auto i : irange(num_aps, formulas.size())) {
+        if (early_reject)
+            break;
         const auto &f = formulas[i];
         assume(!f.is_atomic(), "Atomic formula should not be here");
         if (f.is_next()) {
-            if (f[0] == fid::True || f[0] == fid::False)
+            if (f[0] == fid::True)
                 continue; // nothing to do
+            if (f[0] == fid::False)
+                early_reject = true;
 
             // x[i] = y[f[0]]
             insert(f[0].original(), f[0].is_negation() ^ x[i]);
@@ -360,7 +371,7 @@ auto VisitHelper::build(const fset &x) -> void {
 }
 
 auto VisitHelper::accept(const fset &f) const -> bool {
-    return (f.as_bitset() & indices) == require;
+    return !early_reject && (f.as_bitset() & indices) == require;
 }
 
 } // namespace
