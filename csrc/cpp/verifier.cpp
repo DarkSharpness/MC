@@ -62,32 +62,46 @@ auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
     return false;
 }
 
-template <typename _Fn>
-auto post(ProductSystem::State s, const NBA &nba, const TSView &ts, _Fn &&f) -> void {
-    auto [idx_ts, idx_nba] = s;
-    const auto &range      = (idx_ts == entry_pos) ? ts.initial_set : ts.transitions[idx_ts];
-    for (const auto t : range)
-        if (auto *target = accept(nba, idx_nba, ts.atomics[t]))
-            for (const auto q : *target)
-                f({t, q});
-}
+// template <typename _Fn>
+// auto post(ProductSystem::State s, const NBA &nba, const TSView &ts, _Fn &&f) -> void {
+//     auto [idx_ts, idx_nba] = s;
+//     const auto &range      = (idx_ts == entry_pos) ? ts.initial_set : ts.transitions[idx_ts];
+//     for (const auto t : range)
+//         if (auto *target = accept(nba, idx_nba, ts.atomics[t]))
+//             for (const auto q : *target)
+//                 f({t, q});
+// }
 
-auto ProductSystem::reachable_cycle(State s) -> bool {
-    U.push(s);
-    R.insert(s);
+#define for_each_post(input, ss, f)                                                                \
+    do {                                                                                           \
+        auto [idx_ts, idx_nba] = input;                                                            \
+        const auto &range      = (idx_ts == entry_pos) ? ts.initial_set : ts.transitions[idx_ts];  \
+        for (const auto t : range)                                                                 \
+            if (auto *target = accept(nba, idx_nba, ts.atomics[t]))                                \
+                for (const auto q : *target) {                                                     \
+                    const auto ss = State{t, q};                                                   \
+                    do                                                                             \
+                        f while (0);                                                               \
+                }                                                                                  \
+    } while (0)
+
+auto ProductSystem::reachable_cycle(State input) -> bool {
+    U.push(input);
+    R.insert(input);
     do {
-        const auto s = U.top();
-        U.pop();
-        auto has_unvisited = bool{};
-        post(s, nba, ts, [&](State s) {
-            if (R.contains(s))
-                return;
-            U.push(s);
-            R.insert(s);
-            has_unvisited = true;
+        const auto cur     = U.top();
+        auto has_unvisited = false;
+        for_each_post(cur, s, {
+            if (R.insert(s).second) {
+                has_unvisited = true;
+                U.push(s);
+            }
         });
-        if (!has_unvisited && cycle_check(s))
-            return true;
+        if (!has_unvisited) {
+            U.pop();
+            if (cycle_check(cur))
+                return true;
+        }
     } while (!U.empty());
     return false;
 }
@@ -103,21 +117,19 @@ auto ProductSystem::cycle_check(State start) -> bool {
     V.push(start);
     T.insert(start);
     do {
-        std::unordered_set<State, Hash> post_set;
-        const auto s = V.top();
-        post(s, nba, ts, [&](State s) { post_set.insert(s); });
-        if (post_set.contains(start))
-            return true;
-        for (const auto &s : T)
-            post_set.erase(s);
-        if (post_set.empty()) {
-            V.pop();
-        } else {
-            for (const auto &s : post_set) {
+        const auto cur     = V.top();
+        auto has_unvisited = false;
+        for_each_post(cur, s, {
+            if (s == start)
+                return true;
+            if (T.insert(s).second) {
+                has_unvisited = true;
                 V.push(s);
-                T.insert(s);
             }
-        }
+        });
+
+        if (!has_unvisited)
+            V.pop();
     } while (!V.empty());
     return false;
 }
