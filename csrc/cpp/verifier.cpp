@@ -6,7 +6,8 @@
 namespace dark {
 
 auto verifyLTL(BaseNode *node, const TSView &ts) -> bool {
-    const auto GBNA = GNBA::build(node, ts.num_atomics);
+    const auto GNBA = GNBA::build(node, ts.num_atomics);
+    const auto NBA  = NBA::fromGNBA(GNBA);
     assume(false, "not implemented yet");
     return false;
 }

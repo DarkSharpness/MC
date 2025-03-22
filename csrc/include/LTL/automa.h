@@ -12,7 +12,7 @@ namespace __detail {
 
 struct Automa {
     std::size_t num_states;   // states
-    std::size_t num_triggers; // triggers
+    std::size_t num_triggers; // triggers (= num ap)
 
     // mapping: (trigger -> all potential next states)
     using EdgeMap = std::unordered_map<bitset, bitset>;
@@ -20,6 +20,9 @@ struct Automa {
     // state index -> (which state can be reached next)
     bitset initial_states;
     std::vector<EdgeMap> transitions;
+
+    // try to validate. if false, throw an exception
+    auto validate() const -> void;
 };
 
 struct StateTag;
@@ -33,20 +36,24 @@ struct AutomaImpl : public Automa {
 
 } // namespace __detail
 
-struct GNBA : private __detail::AutomaImpl<GNBA> {
-public:
-    static auto build(BaseNode *, std::size_t) -> GNBA;
-
-private:
-    std::vector<bitset> final_states_list;
-};
+struct GNBA;
 
 struct NBA : private __detail::AutomaImpl<NBA> {
 public:
     static auto fromGNBA(const GNBA &) -> NBA;
 
 private:
+    friend struct LTL;
     bitset final_state;
+};
+
+struct GNBA : private __detail::AutomaImpl<GNBA> {
+public:
+    static auto build(BaseNode *, std::size_t) -> GNBA;
+
+private:
+    friend auto NBA::fromGNBA(const GNBA &) -> NBA;
+    std::vector<bitset> final_states_list;
 };
 
 } // namespace dark

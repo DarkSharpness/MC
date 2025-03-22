@@ -119,26 +119,40 @@ struct bitset : private std::bitset<64> {
 private:
     using Base = std::bitset<64>;
 
+    static auto m_check(std::size_t length) -> void {
+        assume(length <= 64, "Length must be less than or equal to 64");
+    }
+
+    // private constructor for internal use
+    explicit bitset(const Base &b, std::size_t n) : Base(b), m_length(n) {}
+
 public:
     using Base::reference;
 
     explicit bitset() = default;
-    explicit bitset(std::size_t length) : Base(0), m_length(length) {
-        assume(length <= 64);
+    explicit bitset(std::size_t n) noexcept : Base(0), m_length(n) {
+        m_check(n);
     }
 
     bitset(const bitset &)                     = default;
     auto operator=(const bitset &) -> bitset & = default;
 
-    auto resize(std::size_t length) -> void {
-        assume(length <= 64);
-        m_length = length;
+    auto or_at(std::size_t shift, const bitset &rhs) -> void {
+        assume(m_length >= rhs.m_length + shift);
+        (*this) |= (rhs << shift);
+    }
+
+    auto expand(std::size_t n) const -> bitset {
+        m_check(n);
+        assume(n >= m_length);
+        auto result = bitset{*this, n};
+        return result;
     }
 
     auto subset(std::size_t n) const -> bitset {
         assume(n <= m_length);
-        auto result     = *this;
-        result.m_length = n;
+        auto result = bitset{*this, n};
+        result &= Base((1ULL << n) - 1);
         return result;
     }
 

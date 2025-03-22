@@ -46,7 +46,7 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
 
     auto result = TSGraph{};
     readline(is) >> result.num_states >> result.num_transitions;
-    result.initial_set.resize(result.num_states);
+    result.initial_set = bitset{result.num_states};
     readset(is, result.initial_set);
     readrange(is, std::string{}, std::back_inserter(result.action_map));
     readrange(is, std::string{}, std::back_inserter(result.atomic_map));
