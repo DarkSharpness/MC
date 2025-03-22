@@ -1,12 +1,12 @@
 // should only be included once
-#ifndef AUTOMA_AUX_H
-#define AUTOMA_AUX_H
+#ifndef GNBA_AUX_H
+#define GNBA_AUX_H
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #else
-#error "automa_aux.h" included twice
+#error "gnba_aux.h" included twice
 #endif
 
 namespace dark {

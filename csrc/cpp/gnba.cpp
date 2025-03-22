@@ -2,7 +2,7 @@
 #include "LTL/error.h"
 #include "LTL/node.h"
 #include "LTL/node_impl.h"
-#include "automa_aux.h"
+#include "gnba_aux.h"
 #include "utils/bitset.h"
 #include "utils/error.h"
 #include "utils/irange.h"
