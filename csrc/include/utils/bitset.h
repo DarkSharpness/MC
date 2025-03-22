@@ -137,9 +137,10 @@ public:
     bitset(const bitset &)                     = default;
     auto operator=(const bitset &) -> bitset & = default;
 
-    auto or_at(std::size_t shift, const bitset &rhs) -> void {
-        assume(m_length >= rhs.m_length + shift);
-        (*this) |= (rhs << shift);
+    auto set_at(std::size_t n, std::size_t shift, const bitset &rhs) -> void {
+        m_length = n;
+        assume(n >= rhs.m_length + shift);
+        static_cast<Base &>(*this) = (rhs << shift);
     }
 
     auto expand(std::size_t n) const -> bitset {

@@ -355,16 +355,16 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
     const auto size = sets.size(); // the size of the GNBA
     const auto root = collector.map(ptr);
 
-    auto initial_set = [&] {
+    auto make_initial = [&] {
         auto initial   = bitset{size};
         const auto idx = root.original();
         for (const auto i : irange(size))
             if (sets[i][idx] != root.is_negation())
                 initial[i] = true; // if negation, require false (not in set)
         return initial;
-    }();
+    };
 
-    auto transition = [&] {
+    auto make_transition = [&] {
         auto transition = std::vector<EdgeMap>(size);
         auto visit_aux  = VisitHelper{num_ap, formulas};
         for (const auto i : irange(size)) {
@@ -378,17 +378,9 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
             transition[i] = {{trigger, targets}};
         }
         return transition;
-    }();
-
-    auto result = GNBA{};
-    using __detail::Automa;
-    static_cast<Automa &>(result) = Automa{
-        .num_states     = size,
-        .num_triggers   = num_ap,
-        .initial_states = std::move(initial_set),
-        .transitions    = std::move(transition),
     };
-    auto final_list = [&] {
+
+    auto make_final = [&] {
         auto final = std::vector<bitset>{};
         for (const auto i : irange(num_ap, formulas.size())) {
             const auto &f = formulas[i];
@@ -401,8 +393,17 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
             }
         }
         return final;
-    }();
-    result.final_states_list = std::move(final_list);
+    };
+
+    auto result = GNBA{};
+    using __detail::Automa;
+    static_cast<Automa &>(result) = Automa{
+        .num_states     = size,
+        .num_triggers   = num_ap,
+        .initial_states = make_initial(),
+        .transitions    = make_transition(),
+    };
+    result.final_states_list = make_final();
     return result;
 }
 

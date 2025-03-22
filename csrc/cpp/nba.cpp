@@ -38,9 +38,9 @@ auto NBA::fromGNBA(const GNBA &src) -> NBA {
             auto &new_edges   = transitions[j * old_size + i];
             const auto offset = ((j + final[i]) % num_final) * old_size;
             for (const auto &[trig, set] : src.transitions[i]) {
-                auto [it, success] = new_edges.try_emplace(trig, new_size);
+                auto [it, success] = new_edges.try_emplace(trig);
                 assume(success, "duplicate transition");
-                it->second.or_at(offset, set);
+                it->second.set_at(new_size, offset, set);
             }
         }
     }
