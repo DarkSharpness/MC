@@ -58,8 +58,16 @@ auto panic_handler::pop_hook() -> Hook_t {
     return last_hook;
 }
 
-auto debugger() -> std::osyncstream {
-    return std::osyncstream{std::cerr} << "\033[1;33m[DEBUG]\033[0m ";
+auto debugger(std::optional<bool> flag) -> std::osyncstream {
+    static thread_local bool use_debug = true;
+    if (flag.has_value()) {
+        use_debug = flag.value();
+        return std::osyncstream{nullptr};
+    }
+    if (use_debug)
+        return std::osyncstream{std::cerr} << "\033[1;33m[DEBUG]\033[0m ";
+    else
+        return std::osyncstream{nullptr};
 }
 
 } // namespace dark

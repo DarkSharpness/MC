@@ -2,6 +2,7 @@
 #include <concepts>
 #include <format>
 #include <functional>
+#include <optional>
 #include <source_location>
 #include <syncstream>
 #include <type_traits>
@@ -137,6 +138,6 @@ explicit assume(_Cond &&, std::format_string<_Args...>, _Args &&...) -> assume<_
 template <typename _Cond, typename... _Args, __detail::callable<_Cond, _Args...> _Fn>
 explicit assume(_Cond &&, _Fn &&, _Args &&...) -> assume<_Cond, _Args...>;
 
-auto debugger() -> std::osyncstream;
+auto debugger(std::optional<bool> = std::nullopt) -> std::osyncstream;
 
 } // namespace dark

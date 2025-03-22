@@ -170,21 +170,22 @@ auto TSGraph::map_atomic(std::string_view action) const -> std::size_t {
     return it->second;
 }
 
-auto LTLProgram::work(std::istream &gs, std::istream &ts, std::ostream &os) -> void {
+auto LTLProgram::work(std::istream &ts, std::istream &ltl, std::ostream &os) -> void {
     static constexpr auto readline = [](std::istream &is) {
         auto line = std::string{};
         docheck(std::getline(is, line), "expect more lines");
         return std::stringstream{std::move(line)};
     };
 
-    const auto graph  = TSGraph::read(gs);
+    const auto graph = TSGraph::read(ts);
+
     auto num_test_all = std::size_t{};
     auto num_test_one = std::size_t{};
-    readline(ts) >> num_test_all >> num_test_one;
+    readline(ltl) >> num_test_all >> num_test_one;
 
     const auto view = TSView{graph};
     for ([[maybe_unused]] const auto _ : irange(num_test_all)) {
-        auto ss      = readline(ts);
+        auto ss      = readline(ltl);
         auto formula = readLTL(ss, graph);
         os << static_cast<int>(verifyLTL(formula.get(), view)) << '\n';
     }
@@ -192,7 +193,7 @@ auto LTLProgram::work(std::istream &gs, std::istream &ts, std::ostream &os) -> v
     auto set = bitset{view.num_states};
 
     for ([[maybe_unused]] const auto _ : irange(num_test_one)) {
-        auto ss         = readline(ts);
+        auto ss         = readline(ltl);
         const auto view = [&] {
             auto num = std::size_t{};
             ss >> num;

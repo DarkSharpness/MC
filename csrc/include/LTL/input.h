@@ -4,7 +4,7 @@
 namespace dark {
 
 struct LTLProgram {
-    static auto work(std::istream &gs, std::istream &ts, std::ostream &os) -> void;
+    static auto work(std::istream &ts, std::istream &ltl, std::ostream &os) -> void;
 };
 
 } // namespace dark

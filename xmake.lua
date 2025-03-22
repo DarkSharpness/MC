@@ -1,4 +1,4 @@
-add_requires("antlr4-runtime 4.13.2")
+add_requires("antlr4-runtime 4.13.2", "argparse 3.1")
 add_rules("mode.debug", "mode.release")
 
 local warnings = {
@@ -38,7 +38,7 @@ target("LTL")
     add_cxflags(other_cxflags)
     add_includedirs("csrc/include")
     add_files("csrc/cpp/*.cpp")
-    add_packages("antlr4-runtime")
+    add_packages("antlr4-runtime", "argparse")
     if is_mode("debug") then
         add_defines("_DARK_DEBUG")
     end
