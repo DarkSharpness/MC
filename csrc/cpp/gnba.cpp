@@ -151,6 +151,16 @@ auto debug_check_formula(std::span<const Formula> formulas, std::size_t num_ap) 
 
 struct SetBuilder {
 public:
+    struct PrettyInfo {
+        std::vector<std::string> name;
+        auto nameof(const fid f) const -> std::string {
+            if (f.is_negation())
+                return f == fid::False ? "False" : "!" + name[(~f).raw()];
+            else
+                return f == fid::True ? "True" : name[f.raw()];
+        }
+    };
+
     static auto from(std::span<const Formula> formulas, std::size_t num_aps) -> SetBuilder {
         auto builder = SetBuilder{formulas, num_aps};
         builder.build();
@@ -161,7 +171,7 @@ public:
         return sets;
     }
 
-    auto debug(std::ostream &os) const -> void;
+    auto debug(std::ostream &os) const -> PrettyInfo;
 
     auto get_unused_mask() const -> const bitset & {
         return unused_ap_mask;
@@ -258,37 +268,47 @@ auto SetBuilder::build() -> void {
 }
 
 [[maybe_unused]]
-auto SetBuilder::debug(std::ostream &os) const -> void {
+auto SetBuilder::debug(std::ostream &os) const -> PrettyInfo {
     // first of all print all the formula
     os << std::format("Number of atomic propositions: {}\n", num_aps);
     os << std::format("Number of formulas: {}\n", formulas.size());
-    auto display = std::vector<std::string>(formulas.size());
-    auto nameof  = [&display](fid f) -> std::string {
-        if (f.is_negation())
-            return f == fid::False ? "False" : "!" + display[(~f).raw()];
-        else
-            return f == fid::True ? "True" : display[f.raw()];
-    };
+    auto display = PrettyInfo{};
+    auto nameof  = [&display](fid f) -> std::string { return display.nameof(f); };
 
+    display.name.resize(formulas.size());
     for (const auto i : irange(num_aps)) {
         const auto &f = formulas[i];
         assume(f.is_atomic(), "First num_aps must be atomic");
-        display[i] = std::format("[{}]", i);
+        display.name[i] = std::format("[{}]", i);
     }
 
     for (const auto i : irange(num_aps, formulas.size())) {
         const auto &f = formulas[i];
         assume(!f.is_atomic(), "Atomic formula should not be here");
         if (f.is_conj())
-            display[i] = std::format("({} /\\ {})", nameof(f[0]), nameof(f[1]));
+            display.name[i] = std::format("({} /\\ {})", nameof(f[0]), nameof(f[1]));
         else if (f.is_until())
-            display[i] = std::format("({} U {})", nameof(f[0]), nameof(f[1]));
+            display.name[i] = std::format("({} U {})", nameof(f[0]), nameof(f[1]));
         else
-            display[i] = std::format("(O {})", nameof(f[0])); // next
+            display.name[i] = std::format("(O {})", nameof(f[0])); // next
     }
 
     for (const auto i : irange(formulas.size()))
-        os << std::format("Formula {}: {}\n", i, display[i]);
+        os << std::format("Formula {}: {}\n", i, display.name[i]);
+
+    for (const auto i : irange(sets.size())) {
+        const auto &s = sets[i];
+        os << std::format("Set {}: ", i);
+        os << "{ ";
+        for (const auto j : irange(s.size())) {
+            if (j < num_aps && unused_ap_mask[j])
+                continue;
+            os << nameof(fid(s[j] ? j : ~j)) << ' ';
+        }
+        os << "}\n";
+    }
+
+    return display;
 }
 
 struct VisitHelper {
@@ -349,7 +369,7 @@ auto VisitHelper::accept(const fset &f) const -> bool {
 } // namespace
 
 // Transform an LTL formula into a GNBA
-auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
+auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
     const auto num_ap = num_atomics;
     docheck(num_ap > 0, "Invalid number of atomic propositions");
 
@@ -363,7 +383,7 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
 
     const auto sets = builder.elementary_sets();
     const auto size = sets.size(); // the size of the GNBA
-    const auto root = collector.map(ptr);
+    const auto root = negate ? ~collector.map(ptr) : collector.map(ptr);
 
     auto make_initial = [&] {
         auto initial   = bitset{size};
@@ -415,6 +435,37 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
         .unused_ap_mask = builder.get_unused_mask(),
     };
     result.final_states_list = make_final();
+
+    [[maybe_unused]]
+    auto debug = [&] {
+        debugger() << "GNBA construction\n";
+        auto pretty = [&] {
+            auto os = debugger();
+            return builder.debug(os);
+        }();
+        auto to_indice = [](const bitset &b) {
+            std::string result = "{ ";
+            for (const auto i : b)
+                result += std::to_string(i) + ' ';
+            return result + "}";
+        };
+
+        debugger() << "Root formula: " << pretty.nameof(root) << '\n';
+        debugger() << "Initial states: " << to_indice(result.initial_states) << '\n';
+        debugger() << "Transition table:\n";
+        for (const auto i : irange(size)) {
+            auto os = debugger();
+            os << "State " << i << ": ";
+            for (const auto [trigger, target] : result.transitions[i])
+                os << to_indice(trigger) << " -> " << to_indice(target);
+            os << '\n';
+        }
+        debugger() << "Final state sets:\n";
+        for (const auto i : irange(result.final_states_list.size()))
+            debugger() << "  " << to_indice(result.final_states_list[i]) << '\n';
+    };
+
+    // debug();
     return result;
 }
 

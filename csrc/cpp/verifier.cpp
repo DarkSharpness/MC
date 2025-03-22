@@ -22,7 +22,7 @@ public:
         operator==(const State &lhs, const State &rhs) -> bool = default;
     };
 
-    static auto verify(const TSView &ts, const NBA &nba) -> bool;
+    static auto can_run(const TSView &ts, const NBA &nba) -> bool;
 
 private:
     auto reachable_cycle(State s) -> bool;
@@ -54,7 +54,7 @@ auto accept(const NBA &nba, std::size_t idx, const bitset &AP) -> const bitset *
     return nullptr;
 }
 
-auto ProductSystem::verify(const TSView &ts, const NBA &nba) -> bool {
+auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
     auto system = ProductSystem{ts, nba};
     for (const auto i : nba.initial_states)
         if (system.reachable_cycle({entry_pos, i}))
@@ -126,9 +126,12 @@ auto ProductSystem::cycle_check(State start) -> bool {
 } // namespace
 
 auto verifyLTL(BaseNode *node, const TSView &ts) -> bool {
-    const auto GNBA = GNBA::build(node, ts.num_atomics);
-    const auto NBA  = NBA::fromGNBA(GNBA);
-    return ProductSystem::verify(ts, NBA);
+    // build the GNBA of the reverse LTL formula
+    const auto GNBA_ = GNBA::build(node, ts.num_atomics, /*negate=*/true);
+    // convert GNBA to NBA
+    const auto NBA_ = NBA::fromGNBA(GNBA_);
+    // use product system to verify the LTL formula
+    return ProductSystem::can_run(ts, NBA_) ? false : true;
 }
 
 } // namespace dark

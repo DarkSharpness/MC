@@ -37,7 +37,7 @@ struct NBA : __detail::Automa {
 };
 
 struct GNBA : __detail::Automa {
-    static auto build(BaseNode *, std::size_t) -> GNBA;
+    static auto build(BaseNode *, std::size_t, bool negate) -> GNBA;
     std::vector<bitset> final_states_list;
 };
 
