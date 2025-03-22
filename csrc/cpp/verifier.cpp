@@ -2,8 +2,11 @@
 #include "LTL/node.h"
 #include "LTL/ts.h"
 #include "utils/bitset.h"
+#include "utils/error.h"
 #include <bit>
 #include <cstddef>
+#include <format>
+#include <ranges>
 #include <stack>
 #include <unordered_set>
 #include <vector>
@@ -23,6 +26,8 @@ public:
     };
 
     static auto can_run(const TSView &ts, const NBA &nba) -> bool;
+
+    auto brute_force() -> bool;
 
 private:
     auto reachable_cycle(State s) -> bool;
@@ -62,16 +67,6 @@ auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
     return false;
 }
 
-// template <typename _Fn>
-// auto post(ProductSystem::State s, const NBA &nba, const TSView &ts, _Fn &&f) -> void {
-//     auto [idx_ts, idx_nba] = s;
-//     const auto &range      = (idx_ts == entry_pos) ? ts.initial_set : ts.transitions[idx_ts];
-//     for (const auto t : range)
-//         if (auto *target = accept(nba, idx_nba, ts.atomics[t]))
-//             for (const auto q : *target)
-//                 f({t, q});
-// }
-
 #define for_each_post(input, ss, f)                                                                \
     do {                                                                                           \
         auto [idx_ts, idx_nba] = input;                                                            \
@@ -85,6 +80,7 @@ auto ProductSystem::can_run(const TSView &ts, const NBA &nba) -> bool {
                 }                                                                                  \
     } while (0)
 
+[[maybe_unused]]
 auto ProductSystem::reachable_cycle(State input) -> bool {
     U.push(input);
     R.insert(input);
@@ -131,6 +127,79 @@ auto ProductSystem::cycle_check(State start) -> bool {
         if (!has_unvisited)
             V.pop();
     } while (!V.empty());
+    return false;
+}
+
+[[maybe_unused]]
+auto ProductSystem::brute_force() -> bool {
+    auto initial_states = std::vector<State>{};
+    for (const auto i : nba.initial_states) {
+        const auto cur = State{entry_pos, i};
+        for_each_post(cur, s, { initial_states.push_back(s); });
+    }
+
+    auto reachable_states = std::unordered_set<State, Hash>{};
+    auto dfs_from         = [this, &reachable_states](const State &s) {
+        // just start from the initial state
+        auto stack = std::stack<State, std::vector<State>>{};
+        stack.push(s);
+        reachable_states.insert(s);
+        while (!stack.empty()) {
+            const auto cur = stack.top();
+            stack.pop();
+            reachable_states.insert(cur);
+            for_each_post(cur, s, {
+                if (reachable_states.insert(s).second)
+                    stack.push(s);
+            });
+        }
+    };
+    for (const auto &s : initial_states)
+        dfs_from(s);
+
+    auto dfs_check = [this, &initial_states](State entry) {
+        auto visited = std::unordered_set<State, Hash>{};
+        auto result  = std::vector<State>{};
+        auto dfs     = [&](auto &&self, const State cur, const State entry) -> bool {
+            if (!visited.insert(cur).second)
+                return false;
+            for_each_post(cur, s, {
+                if (s == entry) {
+                    return true;
+                }
+                if (self(self, s, entry)) {
+                    result.push_back(s);
+                    return true;
+                }
+                });
+            return false;
+        };
+        if (dfs(dfs, entry, entry)) {
+            debugger() << "Cycle found:\n";
+            result.push_back(entry);
+            auto found = false;
+            for (const auto &s : initial_states) {
+                visited.clear();
+                if (dfs(dfs, s, entry)) {
+                    result.push_back(s);
+                    found = true;
+                    break;
+                }
+            }
+            assume(found, "Cycle not found");
+            for (auto [x, y] : result | std::views::reverse)
+                debugger() << std::format("  ({}, {})\n", x, y);
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    for (const auto &s : reachable_states)
+        if (dfs_check(s))
+            return true;
+
+    debugger() << "No cycle found\n";
     return false;
 }
 
