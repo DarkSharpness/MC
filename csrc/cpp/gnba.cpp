@@ -316,6 +316,10 @@ public:
     auto build(const fset &f) -> void;
     auto accept(const fset &f) const -> bool;
 
+    auto always_reject() const -> bool {
+        return early_reject;
+    }
+
 private:
     bitset require;
     bitset indices;
@@ -402,6 +406,30 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
         return initial;
     };
 
+    [[maybe_unused]]
+    auto can_visit = [num_ap, formulas](const fset &x, const fset &y) {
+        // check those next and until formula
+        for (const auto i : irange(num_ap, formulas.size())) {
+            const auto &f = formulas[i];
+            if (f.is_next()) { // (f = next f[0])
+                if (x[i] != y[f[0]])
+                    return false;
+            } else if (f.is_until()) {
+                if (x[f[1]]) // ok, already true
+                    continue;
+                if (x[i]) {
+                    assume(x[f[0]], "implementation error");
+                    if (!y[i])
+                        return false;
+                    continue;
+                }
+                if (x[f[0]] && y[i])
+                    return false;
+            }
+        }
+        return true;
+    };
+
     auto make_transition = [&] {
         auto transition = std::vector<EdgeMap>(size);
         auto visit_aux  = VisitHelper{num_ap, formulas};
@@ -410,9 +438,11 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
             auto trigger  = s.subset(num_ap);
             auto targets  = bitset{size};
             visit_aux.build(s);
-            for (const auto j : irange(size))
-                if (visit_aux.accept(sets[j]))
-                    targets[j] = true;
+            if (!visit_aux.always_reject()) {
+                for (const auto j : irange(size))
+                    if (visit_aux.accept(sets[j]))
+                        targets[j] = true;
+            }
             transition[i] = {{trigger, targets}};
         }
         return transition;
