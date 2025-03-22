@@ -189,7 +189,7 @@ auto LTLProgram::work(std::istream &gs, std::istream &ts, std::ostream &os) -> v
         os << static_cast<int>(verifyLTL(formula.get(), view)) << '\n';
     }
 
-    auto set = bitset{graph.states()};
+    auto set = bitset{view.num_states};
 
     for ([[maybe_unused]] const auto _ : irange(num_test_one)) {
         auto ss         = readline(ts);

@@ -26,13 +26,15 @@ struct formula_bitset : private bitset {
     using bitset::subset;
     using bitset::to_string;
     using bitset::operator[];
-    using bitset::as_bitset;
     using bitset::size;
     auto operator[](fid f) const -> bool {
         if (f.is_negation())
             return f == fid::False ? false : !(*this)[(~f).raw()];
         else
             return f == fid::True ? true : (*this)[f.raw()];
+    }
+    auto as_bitset() const -> const bitset & {
+        return *this;
     }
 };
 
@@ -161,6 +163,10 @@ public:
 
     auto debug(std::ostream &os) const -> void;
 
+    auto get_unused_mask() const -> const bitset & {
+        return unused_ap_mask;
+    }
+
 private:
     SetBuilder(std::span<const Formula> formulas, std::size_t num_aps) :
         formulas(formulas), num_aps(num_aps) {}
@@ -177,6 +183,9 @@ private:
 
     // finally accepted sets
     std::vector<fset> sets;
+
+    // unused ap mask
+    bitset unused_ap_mask;
 
     // common parameters
     const std::span<const Formula> formulas;
@@ -202,6 +211,12 @@ auto SetBuilder::prepare() -> std::vector<std::size_t> {
         if (f.is_uncertain())
             indice_set.insert(i);
     }
+
+    unused_ap_mask = bitset{num_aps};
+
+    for (const auto i : irange(num_aps))
+        if (!indice_set.contains(i))
+            unused_ap_mask[i] = true;
 
     return {indice_set.begin(), indice_set.end()};
 }
@@ -328,12 +343,7 @@ auto VisitHelper::build(const fset &x) -> void {
 }
 
 auto VisitHelper::accept(const fset &f) const -> bool {
-    assume(f.size() == indices.size() && f.size() == require.size());
-    // all the indiced formula must be satisfied
-    const auto &r = require.as_bitset();
-    const auto &i = indices.as_bitset();
-    const auto &F = f.as_bitset();
-    return (F & i) == r;
+    return (f.as_bitset() & indices) == require;
 }
 
 } // namespace
@@ -395,13 +405,14 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics) -> GNBA {
         return final;
     };
 
-    auto result = GNBA{};
+    auto result = GNBA();
     using __detail::Automa;
     static_cast<Automa &>(result) = Automa{
         .num_states     = size,
         .num_triggers   = num_ap,
         .initial_states = make_initial(),
         .transitions    = make_transition(),
+        .unused_ap_mask = builder.get_unused_mask(),
     };
     result.final_states_list = make_final();
     return result;

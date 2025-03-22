@@ -114,17 +114,51 @@ private:
     std::vector<word_t> m_data;
 };
 
+// don't use this anywhere else
+inline constexpr auto __bitsetN = 64;
+
 // why: i found that 64 bits is enough for my use case
-struct bitset : private std::bitset<64> {
+struct bitset : private std::bitset<__bitsetN> {
 private:
-    using Base = std::bitset<64>;
+    using Base = std::bitset<__bitsetN>;
 
     static auto m_check(std::size_t length) -> void {
-        assume(length <= 64, "Length must be less than or equal to 64");
+        assume(length <= __bitsetN, "Length must be less than or equal to 64");
     }
 
     // private constructor for internal use
     explicit bitset(const Base &b, std::size_t n) : Base(b), m_length(n) {}
+
+    friend struct iterator;
+
+    struct iterator {
+    public:
+        friend auto operator==(const iterator &lhs, const iterator &rhs) -> bool {
+            return lhs.m_index == rhs.m_index;
+        }
+        auto operator++() -> iterator & {
+            m_index = m_bitset._Find_next(m_index);
+            return *this;
+        }
+        auto operator++(int) -> iterator {
+            auto result = *this;
+            ++(*this);
+            return result;
+        }
+        auto operator*() const -> std::size_t {
+            return m_index;
+        }
+
+    private:
+        friend struct bitset;
+        iterator(const bitset &b, std::size_t i) : m_bitset(b), m_index(i) {}
+        const bitset &m_bitset;
+        std::size_t m_index;
+    };
+
+    auto as_bitset() const -> const Base & {
+        return static_cast<const Base &>(*this);
+    }
 
 public:
     using Base::reference;
@@ -182,15 +216,27 @@ public:
     }
 
     // using default operator== for comparison
-    friend auto operator==(const bitset &lhs, const bitset &rhs) -> bool = default;
-
     auto hash() const -> std::uint64_t {
         static_assert(sizeof(Base) == sizeof(std::uint64_t));
         return Base::to_ullong();
     }
 
-    auto as_bitset() const -> const Base & {
-        return *this;
+    auto begin() const -> iterator {
+        return iterator{*this, this->_Find_first()};
+    }
+
+    auto end() const -> iterator {
+        return iterator{*this, __bitsetN};
+    }
+
+    friend auto operator&(const bitset &lhs, const bitset &rhs) -> bitset {
+        assume(lhs.m_length == rhs.m_length);
+        return bitset{lhs.as_bitset() & rhs.as_bitset(), lhs.m_length};
+    }
+
+    friend auto operator==(const bitset &lhs, const bitset &rhs) -> bool {
+        assume(lhs.m_length == rhs.m_length);
+        return lhs.as_bitset() == rhs.as_bitset();
     }
 
 private:

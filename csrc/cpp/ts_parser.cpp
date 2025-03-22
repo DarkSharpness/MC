@@ -56,13 +56,21 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
     for ([[maybe_unused]] const auto _ : irange(result.num_states))
         readset(is, result.ap_sets.emplace_back(kNumAP));
 
-    static constexpr auto build = [](TSGraph &g) {
-        g.atomic_rev_map.reserve(g.atomic_map.size());
-        for (const auto &s : g.atomic_map)
-            g.atomic_rev_map[s] = g.atomic_rev_map.size();
-    };
-    build(result);
+    result.post_init();
     return result;
+}
+
+auto TSGraph::post_init() -> void {
+    atomic_rev_map.reserve(atomic_map.size());
+    for (const auto &s : atomic_map)
+        atomic_rev_map[s] = atomic_rev_map.size();
+    transition_list.assign(num_states, bitset{num_states});
+    for (const auto &[from, action, into] : transitions) {
+        docheck(from < num_states, "transition from out of range");
+        docheck(into < num_states, "transition to out of range");
+        docheck(action < action_map.size(), "transition action out of range");
+        transition_list[from][into] = true;
+    }
 }
 
 auto TSGraph::debug(std::ostream &os) const -> void {

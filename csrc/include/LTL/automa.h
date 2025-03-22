@@ -1,7 +1,6 @@
 #pragma once
 #include "node.h"
 #include "utils/bitset.h"
-#include "utils/type.h"
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -21,38 +20,24 @@ struct Automa {
     bitset initial_states;
     std::vector<EdgeMap> transitions;
 
+    // mask those unused triggers
+    bitset unused_ap_mask;
+
     // try to validate. if false, throw an exception
     auto validate() const -> void;
-};
-
-struct StateTag;
-struct ActionTag;
-
-template <typename Derived>
-struct AutomaImpl : public Automa {
-    using State  = tagged_size_t<Derived, StateTag>;
-    using Action = tagged_size_t<Derived, ActionTag>;
 };
 
 } // namespace __detail
 
 struct GNBA;
 
-struct NBA : private __detail::AutomaImpl<NBA> {
-public:
+struct NBA : __detail::Automa {
     static auto fromGNBA(const GNBA &) -> NBA;
-
-private:
-    friend struct LTL;
-    bitset final_state;
+    bitset final_states;
 };
 
-struct GNBA : private __detail::AutomaImpl<GNBA> {
-public:
+struct GNBA : __detail::Automa {
     static auto build(BaseNode *, std::size_t) -> GNBA;
-
-private:
-    friend auto NBA::fromGNBA(const GNBA &) -> NBA;
     std::vector<bitset> final_states_list;
 };
 

@@ -15,6 +15,7 @@ auto __detail::Automa::validate() const -> void {
             assume(set.size() == num_states, "invalid set size");
         }
     }
+    assume(unused_ap_mask.size() == num_triggers, "invalid unused AP mask size");
 }
 
 auto NBA::fromGNBA(const GNBA &src) -> NBA {
@@ -23,12 +24,14 @@ auto NBA::fromGNBA(const GNBA &src) -> NBA {
     assume(num_final != 0, "not implemented for GNBA with no final states yet");
     const auto old_size = src.num_states;
     const auto new_size = old_size * num_final;
-    auto dst            = NBA{};
+
+    auto dst = NBA();
 
     dst.num_states     = new_size;
     dst.num_triggers   = src.num_triggers; // same AP set as trigger.
+    dst.unused_ap_mask = src.unused_ap_mask;
     dst.initial_states = src.initial_states.expand(new_size);
-    dst.final_state    = src.final_states_list[0].expand(new_size);
+    dst.final_states   = src.final_states_list[0].expand(new_size);
 
     // make the transition function
     auto transitions = std::vector<EdgeMap>(new_size);

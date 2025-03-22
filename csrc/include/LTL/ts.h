@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace dark {
 
@@ -18,11 +19,8 @@ public:
     };
 
     auto debug(std::ostream &) const -> void;
-
+    // map an atomic proposition to its index
     auto map_atomic(std::string_view) const -> std::size_t;
-    auto states() const -> std::size_t {
-        return this->num_states;
-    }
 
 private:
     std::size_t num_states;
@@ -34,7 +32,9 @@ private:
     std::vector<Transition> transitions;
     std::vector<bitset> ap_sets;
 
-    // Post init data
+    // Post init function and post init data
+    auto post_init() -> void;
+    std::vector<bitset> transition_list;
     std::unordered_map<std::string_view, std::size_t> atomic_rev_map;
     friend struct TSView;
 };
@@ -42,18 +42,17 @@ private:
 struct TSView {
     TSView(const TSGraph &, std::optional<bitset> = std::nullopt);
 
-    using Transition = TSGraph::Transition;
+    std::size_t num_states;  // number of states
+    std::size_t num_atomics; // number of atomic propositions
 
-    std::size_t num_states;                  // number of states
-    std::size_t num_atomics;                 // number of atomic propositions
-    bitset initial_set;                      // initial state
-    std::span<const Transition> transitions; // raw transitions
-    std::span<const bitset> ap_sets;         // ap of each state
+    bitset initial_set;                  // set of initial state
+    std::span<const bitset> transitions; // state -> set of states
+    std::span<const bitset> atomics;     // state -> set of atomic propositions
 };
 
 inline TSView::TSView(const TSGraph &graph, std::optional<bitset> new_init) :
     num_states(graph.num_states), num_atomics(graph.atomic_map.size()),
-    initial_set(new_init.value_or(graph.initial_set)), transitions(graph.transitions),
-    ap_sets(graph.ap_sets) {}
+    initial_set(std::move(new_init).value_or(graph.initial_set)),
+    transitions(graph.transition_list), atomics(graph.ap_sets) {}
 
 } // namespace dark
