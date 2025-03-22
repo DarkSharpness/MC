@@ -197,6 +197,12 @@ public:
 
     using Base::reset;
 
+    auto set_all() -> void {
+        m_check(m_length);
+        for (std::size_t i = 0; i < m_length; ++i)
+            Base::operator[](i) = true;
+    }
+
     auto operator[](std::size_t i) const -> bool {
         assume(i < m_length, "Subscript out of range");
         return Base::operator[](i);

@@ -21,11 +21,24 @@ auto __detail::Automa::validate() const -> void {
 auto NBA::fromGNBA(const GNBA &src) -> NBA {
     src.validate();
     const auto num_final = src.final_states_list.size();
-    assume(num_final != 0, "not implemented for GNBA with no final states yet");
+    auto dst             = NBA();
+    if (num_final <= 1) {
+        dst.num_states     = src.num_states;
+        dst.num_triggers   = src.num_triggers; // same AP set as trigger.
+        dst.used_ap_mask   = src.used_ap_mask;
+        dst.initial_states = src.initial_states;
+        dst.final_states   = bitset{src.num_states};
+        if (num_final == 1)
+            dst.final_states = src.final_states_list[0];
+        else
+            dst.final_states.set_all();
+        dst.transitions = src.transitions;
+        dst.validate();
+        return dst;
+    }
+
     const auto old_size = src.num_states;
     const auto new_size = old_size * num_final;
-
-    auto dst = NBA();
 
     dst.num_states     = new_size;
     dst.num_triggers   = src.num_triggers; // same AP set as trigger.
