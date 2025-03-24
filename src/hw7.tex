@@ -1,0 +1,63 @@
+\chapter{Homework 7}
+
+\section{Problem 1}
+
+\subsection*{(a)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p1_a.pdf}
+\end{figure}
+
+\subsection*{(b)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p1_b.pdf}
+\end{figure}
+
+\subsection*{(c)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p1_c.pdf}
+\end{figure}
+
+\section{Problem 2}
+
+\subsection*{(a)}
+
+$$
+\varphi = (\Diamond \square a) \wedge (\square \Diamond b)
+$$
+
+Sketch of proof:
+
+1. $\mathcal{L}_w(\mathcal{G}) \subseteq \text{Word}(\varphi)$
+
+First of all, it's trivial to see that the GBNA can't reach $q_3$, because if so,
+we will never be able to reach $q_2$, which means that we can't visit the one of the final
+set $\{q_2\}$ infinitely often.
+
+Then, it's trivial to see that the GBNA will eventually reach $q_1$, and then $a$ must hold true,
+which is the $\Diamond \square a$ part.
+Moreover, it's also trivial to see that after the GBNA reaches $q_1$, $q_2$ will be visited infinitely often,
+which means that $b$ will hold true infinitely often, which is the $\square \Diamond b$ part.
+
+2. $\text{Word}(\varphi) \subseteq \mathcal{L}_w(\mathcal{G})$
+
+For each state that satisfies $\varphi$, for any trace $\sigma=A_0 A_1 A_2 \cdots \in \text{Word}(\varphi)$,
+suppose that $\{a\} \subseteq A_i$ when $i \geq n$, then we can construct a path in the GBNA that stays at
+$q_0$ and travel to $q_1$ at the $n$-th input. Then since $\{a\} \subseteq A_i$ when $i \geq n$, and we have
+$\square \Diamond b$ (which implies infinitely often $b$), we can construct a path that stays at $q_1$ and
+travel to $q_2$ from $q_1$ once $b$ holds true, and travels back to $q_1$ immediately after that.
+This way, we can construct a path that satisfies $\varphi$ in the GBNA.
+
+To sum up, $\mathcal{L}_w(\mathcal{G}) = \text{Word}(\varphi)$.
+
+\subsection*{(b)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p2_b.pdf}
+\end{figure}
