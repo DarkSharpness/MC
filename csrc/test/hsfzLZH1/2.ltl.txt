@@ -1,0 +1,7 @@
+6 0
+F(G c)
+G(F c)
+(X ! c)->(X X c)
+G a
+a U (G (b\/c))
+(X X b)U(b\/c)
