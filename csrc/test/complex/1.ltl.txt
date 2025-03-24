@@ -1,0 +1,5 @@
+0 4
+0 (a U b) /\ (b U a)
+1 (a U b) /\ (b U a)
+2 (a U b) /\ (b U a)
+3 (a U b) /\ (b U a)
