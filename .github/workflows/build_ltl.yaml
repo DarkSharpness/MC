@@ -4,6 +4,8 @@ on:
     push:
         tags:
             - 'r*'
+        paths:
+            - 'csrc/test/**'
 
 permissions:
   contents: write
@@ -29,7 +31,10 @@ jobs:
           antlr4 -visitor -no-listener -Dlanguage=Cpp csrc/antlr/LTL.g4
 
       - name: Build binary from source
-        run: xmake -y
+        run: xmake -y && sudo xmake install LTL
+
+      - name: Run unit tests
+        run: python csrc/test/run.py
 
       - name: Create GitHub Release and Upload Binary
         uses: softprops/action-gh-release@v2
