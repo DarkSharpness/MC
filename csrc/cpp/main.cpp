@@ -1,6 +1,8 @@
+#include "LTL/error.h"
 #include "LTL/input.h"
 #include "utils/error.h"
 #include <argparse/argparse.hpp>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -68,8 +70,11 @@ auto work(int argc, const char **argv) -> void {
 auto main(int argc, const char **argv) -> int {
     try {
         work(argc, argv);
+    } catch (const dark::LTLException &e) {
+        std::cerr << std::format("Invalid input format: {}\n", e.what());
+        return 1;
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << std::format("Implementation Error: {}\n", e.what());
         return 1;
     }
     return 0;

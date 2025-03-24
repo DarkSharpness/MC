@@ -123,8 +123,7 @@ auto FormulaCollector::build(BaseNode *ptr) -> fid {
         return fid(atomic->index);
     }
 
-    docheck(false, "Invalid node type");
-    std::unreachable();
+    panic("Invalid node type");
 }
 
 auto debug_check_formula(std::span<const Formula> formulas, std::size_t num_ap) -> void {
@@ -382,7 +381,7 @@ auto VisitHelper::accept(const fset &f) const -> bool {
 // Transform an LTL formula into a GNBA
 auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
     const auto num_ap = num_atomics;
-    docheck(num_ap > 0, "Invalid number of atomic propositions");
+    docheck(num_ap > 0, "There must be at least 1 atomic proposition");
 
     // Now we have abstract the formula into structures
     const auto collector = FormulaCollector::from(ptr, num_ap);
