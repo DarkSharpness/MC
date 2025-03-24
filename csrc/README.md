@@ -99,4 +99,76 @@ LTL -S --ts csrc/test/basic/test.ts.txt --ltl csrc/test/basic/test.ltl.txt
 
 ## Implementation Details
 
-<!-- TODO -->
+As specified in `xmake.lua`, the C++ part consists of three main components:
+
+1. ANTLR-generated files – Responsible for parsing LTL formulas.
+2. Error handling library – Provides debugging utilities.
+3. Core LTL implementation – The primary focus of our project.
+
+The core implementation follows this structure:
+
+```plaintext
+csrc/
+├── antlr/              # ANTLR-generated C++ files for LTL parsing
+├── cpp/
+│   ├── utils/          # Utility functions, including error handling
+│   ├── gnba_aux.h      # Helper header for GNBA implementation (included only once)
+│   ├── ltl_parser.cpp  # LTL formula parser (based on ANTLR)
+│   ├── main.cpp        # Entry point, includes CLI implementation
+│   ├── nba.cpp         # GNBA-to-NBA conversion logic
+│   ├── ts_parser.cpp   # Transition System (TS) parser
+│   ├── verifier.cpp    # LTL verification via product system
+└── include/
+    ├── LTL/            # Core LTL-related implementations
+    │   ├── automa.h    # GNBA and NBA class definitions
+    │   ├── error.h     # Exception handling for program crashes
+    │   ├── input.h     # Interface for TS and LTL parsers
+    │   ├── node.h      # AST node base class representing an LTL formula
+    │   ├── node_impl.h # Implementation of AST nodes, only included when needed
+    │   ├── ts.h        # Data structures for transition systems
+    └── utils/          # Lightweight custom C++ utility library
+        ├── bitset.h    # Custom dynamic bitset implementation
+        ├── error.h     # Runtime assertion utilities (assume & panic)
+        └── irange.h    # Python-style integer range loop helper
+```
+
+There are tons of micro optimizations in my code (e.g. bitset instead of sets), so we will only focus on two key components:
+
+- Converting an LTL formula to a GNBA (`gnba.cpp`)
+- Verification using a product system (`verifier.cpp`)
+
+### LTL Formula to GNBA Conversion
+
+Once the transition system and LTL formula are fully parsed, we translate the formula into a Generalized Nondeterministic Büchi Automaton (GNBA). This involves three key steps:
+
+1. Formula Normalization & Indexing
+   - We represent each subformula as an integer-indexed entity, associating every unique subformula with a unique ID.
+   - To efficiently handle negations, we introduce a convention:
+     - A formula without an outer `¬` is assigned a positive ID.
+     - A formula with an outer `¬` is assigned a negative ID of the corresponding formula.
+   - This avoids redundant recomputation and simplifies logical operations.
+
+2. Formula Collection & Elementary Set Construction
+   - The `FormulaCollector` class systematically collects and deduplicates subformulas by applying equivalence simplifications, such as:
+     - `a /\ b` = `b /\ a`
+     - `!!a` = `a`
+   - The `SetBuilder` class then constructs elementary sets.
+
+3. GNBA State & Transition Construction
+   - Using the elementary sets, we construct the GNBA state transitions following the rules.
+
+### Verification using TS and NBA
+
+With the GNBA constructed and converted into NBA, we proceed to verification by building the product system. Key points include:
+
+1. Virtual Initial Node for Simplification
+   - Instead of handling multiple initial states explicitly, we introduce a virtual initial node that can transition to all valid initial states in the transition system.
+   - This eliminates the need for special handling of initial state selection during verification.
+
+2. Cycle Detection for LTL Satisfaction
+   - The verification process involves nested depth-first search (DFS) to detect accepting cycles in the product system.
+   - If a cycle is found, the algorithm outputs:
+     - The cycle itself (indicating a repeated sequence of states).
+     - A path leading to the cycle (demonstrating how the system reaches the repeating behavior).
+
+This method ensures correctness and provides an interpretable counterexample when an LTL formula is violated.
