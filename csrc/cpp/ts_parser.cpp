@@ -9,6 +9,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace dark {
@@ -33,14 +34,13 @@ auto TSGraph::read(std::istream &is) -> TSGraph {
     auto initial_set   = std::vector<std::size_t>{};
     const auto readset = [&initial_set](std::istream &is, bitset &set) {
         initial_set.clear();
-        readrange(is, std::size_t{}, std::back_inserter(initial_set));
-        if (is.bad()) { // read -1
-            set.reset();
-        } else { // meeting a set
-            for (const auto i : initial_set) {
-                docheck(i < set.size(), "initial state index out of range");
-                set[i] = true;
-            }
+        readrange(is, std::make_signed_t<std::size_t>{}, std::back_inserter(initial_set));
+        // empty set means all states
+        if (initial_set.size() == 1 && initial_set[0] == static_cast<std::size_t>(-1))
+            return;
+        for (const auto i : initial_set) {
+            docheck(i < set.size(), "initial state index out of range");
+            set[i] = true;
         }
     };
 

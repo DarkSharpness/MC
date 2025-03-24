@@ -13,16 +13,12 @@ local other_cxflags = {
 }
 
 set_languages("c++23")
-set_toolchains("gcc")
 
 target("antlr-g4")
     set_kind("static")
     add_includedirs("csrc/antlr", {public = true})
     add_files("csrc/antlr/*.cpp")
     add_packages("antlr4-runtime")
-
--- set macro DEBUG for debug mode
-
 
 target("error-handler")
     set_kind("static")
