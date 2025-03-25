@@ -31,7 +31,7 @@ jobs:
           antlr4 -visitor -no-listener -Dlanguage=Cpp csrc/antlr/LTL.g4
 
       - name: Build binary from source
-        run: xmake -y && sudo xmake install LTL
+        run: xmake -y && xmake install LTL
 
       - name: Run unit tests
         run: python csrc/test/run.py
