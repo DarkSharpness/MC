@@ -61,3 +61,99 @@ To sum up, $\mathcal{L}_w(\mathcal{G}) = \text{Word}(\varphi)$.
     \centering
     \includegraphics[width=0.8\textwidth]{generated/hw7/p2_b.pdf}
 \end{figure}
+
+\section{Problem 3}
+
+Remark: This problem is solved with assistance from my LTL formula checker.
+
+\subsection*{(a)}
+
+$$
+\psi = \text{true} \mathsf{U} (\neg (\neg b \mathsf{U}  (a \wedge b)) \wedge a)
+$$
+
+\subsection*{(b)}
+
+$$
+\begin{aligned}
+& \{ \text{true}, \neg a, \neg b, \neg (a \wedge b), \neg (\neg b \mathsf{U} (a \wedge b)), \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), \neg (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, \neg a, \neg b, \neg (a \wedge b), \neg (\neg b \mathsf{U} (a \wedge b)), \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, \neg a, \neg b, \neg (a \wedge b), (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), \neg (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, \neg a, \neg b, \neg (a \wedge b), (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, \neg a, b , \neg (a \wedge b), \neg (\neg b \mathsf{U} (a \wedge b)), \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), \neg (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, \neg a, b , \neg (a \wedge b), \neg (\neg b \mathsf{U} (a \wedge b)), \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, a , \neg b, \neg (a \wedge b), \neg (\neg b \mathsf{U} (a \wedge b)), (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, a , \neg b, \neg (a \wedge b), (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), \neg (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, a , \neg b, \neg (a \wedge b), (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, a , b , (a \wedge b) , (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), \neg (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+& \{ \text{true}, a , b , (a \wedge b) , (\neg b \mathsf{U} (a \wedge b)) , \neg (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a), (\text{true} \mathsf{U} (\neg (\neg b \mathsf{U} (a \wedge b)) \wedge a)) \} \\
+\end{aligned}
+$$
+
+\subsection*{(c)}
+
+The tuple $\text{State} x: y \rightarrow z$ means that the state $x$ can transit to any state in the set $z$ when the input AP set is $y$.
+
+$$
+\begin{aligned}
+& \text{State} 0: \emptyset \to \{ 0, 4 \} \\
+& \text{State} 1: \emptyset \to \{ 1, 5, 6 \} \\
+& \text{State} 2: \emptyset \to \{ 2, 7, 9 \} \\
+& \text{State} 3: \emptyset \to \{ 3, 8, 10 \} \\
+& \text{State} 4: \{ b \} \to \{ 0, 2, 4, 7, 9 \} \\
+& \text{State} 5: \{ b \} \to \{ 1, 3, 5, 6, 8, 10 \} \\
+& \text{State} 6: \{ a \} \to \{ 0, 1, 4, 5, 6 \} \\
+& \text{State} 7: \{ a \} \to \{ 2, 7, 9 \} \\
+& \text{State} 8: \{ a \} \to \{ 3, 8, 1, 0 \} \\
+& \text{State} 9: \{ a, b \} \to \{ 0, 2, 4, 7, 9 \} \\
+& \text{State} 10: \{ a,b \} \to \{ 1, 3, 5, 6, 8, 10 \} \\
+\end{aligned}
+$$
+
+Final sets:
+
+$$
+\{\{ 0, 1, 4, 5, 6, 9, 10 \}, \{ 0, 2, 4, 6, 7, 9 \} \}
+$$
+
+Initial set:
+
+$$
+\{ 1, 3, 5, 6, 8, 10 \}
+$$
+
+\subsection*{(d)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p3_d.pdf}
+\end{figure}
+
+\subsection*{(e)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{generated/hw7/p3_e.pdf}
+\end{figure}
+
+\subsection*{(f)}
+
+Suppose the outer dfs visit this path:
+
+$$
+(s_0, q_0) \to (s_3, q_1) \to (s_0, q_1) \to (s_1, q_3) \to (s_2, q_3) \to (s_3, q_3) \to (s_0, q_3)
+$$
+
+Then, since $\text{Post}((s_0, q_3))$ have been visited and $q_3$ is in the final state set,
+so we start an inner dfs from $(s_0, q_3)$:
+
+Suppose the inner dfs visit this path:
+
+$$(s_1, q_3) \to (s_2, q_3) \to (s_3, q_3) \to (s_0, q_3)$$
+
+It comes back to $(s_0, q_3)$, which means we have found a cycle.
+In the end, we output $\text{TS} \not \models \varphi$, and yield the following counterexample:
+
+$$
+(s_0, q_0) \to (s_3, q_1) \to (s_0, q_1) \to (s_1, q_3) \to (s_2, q_3) \to (s_3, q_3) \to (s_0, q_3) (\to (s_1, q_3) \to (s_2, q_3) \to (s_3, q_3) \to (s_0, q_3))^{\omega}
+$$
