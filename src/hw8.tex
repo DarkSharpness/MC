@@ -1,0 +1,47 @@
+\chapter{Homework 8}
+
+\section{Problem 1}
+
+$$
+\text{SAT}({\Phi_1}) = \{s_0, s_1, s_2, s_3, s_4\}
+$$
+
+so, $\text{TS} \models \text{SAT}({\Phi_1})$.
+
+$$
+\text{SAT}({\Phi_2}) = \{s_4\}
+$$
+
+so, $\text{TS} \not \models \text{SAT}({\Phi_2})$.
+
+\section{Problem 2}
+
+Simple Scratch:
+
+First of all, collect $\text{SAT}(\Psi)$ and $\text{SAT}(\Phi)$.
+Then, adding all states in $\text{SAT}(\Psi)$ to the final set,
+and also to the queue. Also, maintain a counter for each state.
+
+Then, while the queue is not empty, pop a state $s$ from the queue,
+and for each state $s'$ in $\text{Pre}(s)$, if $s'$ is in $\text{SAT}(\Phi)$, then
+increment the counter of $s'$, and if the counter of $s'$ is equal to the number of
+states in $\text{Post}(s')$, then add $s'$ to the final set and the queue.
+
+Run until the queue is empty. Then the final set is the $\text{SAT}(\forall(\Phi \textsf{U} \Psi))$.
+
+Proof of correctness:
+
+For any state $s$ found by such algorithm, we can prove by induction that either $s$ is
+in $\text{SAT}(\Psi)$, or any $s'$ in $\text{Post}(s)$ satisfies $\text{SAT}(\forall(\Phi \textsf{U} \Psi))$.
+This is due to
+$\forall(\Phi \textsf{U} \Psi) = \Psi \vee (\Phi \wedge \forall \bigcirc \forall(\Phi \textsf{U} \Psi))$.
+
+Proof of soundness:
+
+For any state $s$ in $\text{SAT}(\forall(\Phi \textsf{U} \Psi))$, we can similarly prove by induction that
+either $s$ is in $\text{SAT}(\Psi)$, which will be found by the algorithm at the beginning, or
+any $s'$ in $\text{Post}(s)$ satisfies $\text{SAT}(\forall(\Phi \textsf{U} \Psi))$, and by induction have
+already been found by the algorithm.
+
+(Actually, we need do define some kind of $\text{depth}$ to formalize the induction, but for simplicity
+this is omitted here.)
