@@ -3,7 +3,7 @@ TEX_FILES = \
 	src/*.tex
 CLASS_FILES = elegantbook.cls
 BIB_FILES = reference.bib
-IMAGES = image/*.png
+IMAGES = image/*.png generated/*/*.pdf
 OUTPUT_DIR = .build
 
 .PHONY: all
