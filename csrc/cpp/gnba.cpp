@@ -296,7 +296,7 @@ auto SetBuilder::debug(std::ostream &os) const -> PrettyInfo {
         os << std::format("Set {}: ", i);
         os << "{ ";
         for (const auto j : irange(s.size())) {
-            if (j < num_aps && used_ap[j])
+            if (j < num_aps && !used_ap[j])
                 continue;
             os << nameof(fid(s[j] ? j : ~j)) << ' ';
         }
