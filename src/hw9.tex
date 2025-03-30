@@ -60,5 +60,26 @@ which also indicates a contradiction.
 
 As a result, we have proved that if $s_1 \sim_{M} s_2$ holds, then
 $\forall s_1' \in \text{Post}(s_1), \exists s_2' \in \text{Post}(s_2)$ such that $s_1' \sim_{M} s_2'$.
+For the reverse direction, we can prove similarly.
 
 By definition, $\sim_{M}$ is a bisimulation relation, which implies $s_1 \sim_{TS} s_2$ holds.
+
+\subsection*{(b)}
+
+counterexample is:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hw9-counterexample.pdf}
+    \caption{Counterexample for Problem 2(b)}
+\end{figure}
+
+Note that there's a missing label $A$ for $s_2$ in the image.
+
+Trivially, for any given $n$, we have $s_1 \sim_{n} s_2$ holds. The state that can accept infinitely many $\{a\}$
+in $\text{Post}(s_2)$ has $\sim_{n}$ relation with the state in $\text{Post}(s_1)$ that can accept at least $n + 1$ $\{a\}$.
+
+However, there doesn't exist a state in $\text{Post}(s_1)$ that can accept infinitely many $\{a\}$,
+so we don't have $s_1 \sim_{TS} s_2$ holds.
+
+In fact, I think this is the difference between arbitrary any finite $n$ and the infinite.
