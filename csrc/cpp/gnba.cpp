@@ -131,7 +131,6 @@ auto debug_check_formula(std::span<const Formula> formulas, std::size_t num_ap) 
     assume(num_ap > 0, "Invalid number of atomic propositions");
 
     // first num_ap must be atomic
-    // for (const auto &f : formulas | std::views::take(num_ap))
     for (const auto i : irange(num_ap))
         assume(formulas[i].is_atomic(), "Invalid formula type");
 
@@ -236,9 +235,9 @@ auto SetBuilder::check(fset set) const -> std::optional<fset> {
         } else if (f.is_until()) {
             // f is uncertain, and maybe conflict
             // use local until property to check
-            const auto lhs = set[f[0]];
-            const auto rhs = set[f[1]];
-            const auto cur = bool(set[i]);
+            const bool lhs = set[f[0]];
+            const bool rhs = set[f[1]];
+            const bool cur = set[i];
             if (!cur && rhs)
                 return std::nullopt;
             if (cur && !lhs && !rhs)
@@ -466,8 +465,7 @@ auto GNBA::build(BaseNode *ptr, std::size_t num_atomics, bool negate) -> GNBA {
         return final;
     };
 
-    auto result = GNBA();
-    using __detail::Automa;
+    auto result                   = GNBA();
     static_cast<Automa &>(result) = Automa{
         .num_states     = size,
         .num_triggers   = num_ap,

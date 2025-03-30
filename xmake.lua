@@ -5,7 +5,7 @@ local warnings = {
     "all",      -- turn on all warnings
     "extra",    -- turn on extra warnings
     "error",    -- treat warnings as errors
-    -- "pedantic", -- be pedantic
+    "pedantic", -- be pedantic
 }
 
 local other_cxflags = {
@@ -24,7 +24,7 @@ target("error-handler")
     set_kind("static")
     set_warnings(warnings)
     add_cxflags(other_cxflags)
-    add_includedirs("csrc/include/utils", {public = false})
+    add_includedirs("csrc/include")
     add_files("csrc/cpp/utils/*.cpp")
 
 target("LTL")

@@ -6,7 +6,7 @@
 
 namespace dark {
 
-auto __detail::Automa::validate() const -> void {
+auto Automa::validate() const -> void {
     assume(num_states > 0, "empty automa");
     assume(num_triggers > 0, "empty trigger set (AP)");
     for (const auto &edges : transitions) {
