@@ -7,8 +7,6 @@
 
 namespace dark {
 
-namespace __detail {
-
 struct Automa {
     std::size_t num_states;   // states
     std::size_t num_triggers; // triggers (= num ap)
@@ -27,16 +25,14 @@ struct Automa {
     auto validate() const -> void;
 };
 
-} // namespace __detail
-
 struct GNBA;
 
-struct NBA : __detail::Automa {
+struct NBA : Automa {
     static auto fromGNBA(const GNBA &) -> NBA;
     bitset final_states;
 };
 
-struct GNBA : __detail::Automa {
+struct GNBA : Automa {
     static auto build(BaseNode *, std::size_t, bool negate) -> GNBA;
     std::vector<bitset> final_states_list;
 };

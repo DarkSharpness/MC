@@ -1,6 +1,6 @@
 # LTL implementation
 
-This is a program which can parse a given TS (Transition System) and LTL (Linear Time Logic) formulae.
+This is a program which can parse a given TS (Transition System) and LTL (Linear Temporal Logic) formulae.
 It is written in modern C++ (to be specific, `C++23`), and uses `xmake` as the package manager and program builder.
 
 ## Input specification
