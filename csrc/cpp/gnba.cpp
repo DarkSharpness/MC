@@ -46,6 +46,9 @@ struct FormulaCollector {
     }
 
     auto map(BaseNode *node) const -> fid {
+        // for atomic node, we can directly figure out its index
+        if (auto ptr = node->is<AtomicNode>())
+            return fid(ptr->index);
         auto iter = mapping.find(node);
         assume(iter != mapping.end(), "Node not found, call build first");
         return iter->second;
