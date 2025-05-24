@@ -38,3 +38,4 @@ target("LTL")
     if is_mode("debug") then
         add_defines("_DARK_DEBUG")
     end
+    set_rundir("$(projectdir)")
